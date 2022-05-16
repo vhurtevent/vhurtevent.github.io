@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Mise en place :: [ALERT] SUPERVISION IS DOWN, OBSERVABILITY IS UP</title>
+    <link rel="canonical" href="https://vhurtevent.github.io/mise-en-place.html">
+    <meta name="generator" content="Antora 3.0.0">
+    <link rel="stylesheet" href="./_/css/site.css">
+    <link rel="stylesheet" href="./_/css/extra.css">    <script>var uiRootPath = './_'</script>
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://vhurtevent.github.io">[ALERT] SUPERVISION IS DOWN, OBSERVABILITY IS UP</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="https://www.github.com/vhurtevent/jres2022-tuto-obs">Github</a>
+        <a class="navbar-item" href="https://hub.docker.com/u/vhurtevent">Docker</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="ROOT" data-version="master">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="introduction.html">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="prerequis.html">Pré-requis</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="mise-en-place.html">Mise en place</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="stockage-objet.html">Stockage Objet (S3)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="metriques.html">Centralisation et consultation des métriques avec Thanos</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="journaux.html">Centralisation et consultation des journaux avec Loki</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="bibliographie.html">Bilbiographie &amp; Liens</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="introduction.html">[ALERT] SUPERVISION IS DOWN, OBSERVABILITY IS UP</a></li>
+    <li><a href="mise-en-place.html">Mise en place</a></li>
+  </ul>
+</nav>
+  <div class="edit-this-page"><a href="file:///home/vincent/workspace/pcscol/ops/jres2022/docs/modules/ROOT/pages/mise-en-place.adoc">Edit this Page</a></div>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="5">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Mise en place</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>L’objectif de ce tutoriel est la mise en œuvre d’une plateforme de centralisation de métriques et de journaux (logs). Ceux-ci seront stockés dans un stockage objet longue durée et indexés afin de les interroger par requête et de les visualiser dans des tableaux de bord dynamiques.</p>
+</div>
+<div class="paragraph">
+<p>Nous aurons besoin d’éléments d’infrastructures qui vont produire ces métriques et journaux. Ils n’appartiendront pas tous à la même organisation afin de démontrer la caractéristique multi-tenant de la plate-forme. Vous verrez comment les données produites à la source seront étiquetées, ce qui permettra de filtrer l’accès aux métriques et aux journaux.</p>
+</div>
+<div class="paragraph">
+<p>Nous identifions 3 tenants :</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Tenant</th>
+<th class="tableblock halign-left valign-top">Rôle</th>
+<th class="tableblock halign-left valign-top">Commentaires</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>hoster</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Hébergeur</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Il fournit des infrastructures et des services associés aux organisations qu’il héberge. Il travaille à la refonte de son service de supervision</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>foo</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Organisation cliente de l’hébergeur</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Elle déploie des infrastructures chez <code>hoster</code> et y héberge des applications. Elle souhaite bénéficier du service de supervision proposé par l’hébergeur.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>bar</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Organisation cliente de l’hébergeur</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Elle déploie des applications dans l’offre Plateform as a Service (Kubernetes) chez <code>hoster</code>. Elle souhaite bénéficier du service de supervision proposé par l’hébergeur.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_infrastructures_nécessaires"><a class="anchor" href="#_infrastructures_nécessaires"></a>Infrastructures nécessaires</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Pour les besoins du tutoriel, nous allons déployer les infrastructures suivantes :</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 12.5%;">
+<col style="width: 25%;">
+<col style="width: 37.5%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Infrastructure</th>
+<th class="tableblock halign-left valign-top">Tenant</th>
+<th class="tableblock halign-left valign-top">Nom</th>
+<th class="tableblock halign-left valign-top">Commentaires</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Un réseau IPv4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">hoster</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">net-hoster</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Réseau dans lequel sera instanciée l’infrastructure du tenant <code>hoster</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Un cluster Kubernetes</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">hoster</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">kube-hoster-mutu</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Cluster Kubernetes mutualisé, appartenant au tenant <code>hoster</code>, support de l’offre PaaS, qui peut héberger des applications pour le compte des tenants <code>foo</code>, <code>bar</code> et <code>hoster</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Une machine virtuelle</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">hoster</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">vm-hoster</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">VM appartenant au tenant <code>hoster</code> qui nous servira à déployer les composants de la plateforme.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Un réseau IPv4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">foo</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">net-foo</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Réseau dans lequel sera instanciée l’infrastructure appartenant au tenant <code>foo</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Une machine virtuelle</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">foo</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">vm-foo</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">VM appartenant au tenant <code>foo</code> qui exécutera un serveur web Nginx</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Un cluster Kubernetes</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">foo</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">kube-foo</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Cluster Kubernetes appartenant au tenant <code>foo</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+L’organisation <code>bar</code> ne possède pas d’infrastructure, elle est simple utilisatrice du service d’hébergement d’application (PaaS Kubernetes) de <code>hoster</code>.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Nous utilisons Terraform pour déployer l’infrastructure listée au tableau <a href="#_infrastructures_nécessaires">Infrastructures nécessaires</a>.
+L’intégralité du code de déploiement Terraform est accessible au sein du dépôt Git du projet dans le dossier <code>src/infrastuctures</code>.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_schémas_dinfrastructures"><a class="anchor" href="#_schémas_dinfrastructures"></a>Schémas d’infrastructures</h2>
+<div class="sectionbody">
+<div class="imageblock">
+<div class="content">
+<img src="_images/infrastructures.png" alt="Les infrastructures déployées appartiennent à 2 tenants : `foo` et `hoster`">
+</div>
+<div class="title">Figure 1. Les infrastructures déployées appartiennent aux 2 tenants : <code>foo</code> et <code>hoster</code></div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_déploiement_des_infrastructure"><a class="anchor" href="#_déploiement_des_infrastructure"></a>Déploiement des infrastructure</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_démarrage_du_poste_de_travail_administrateur"><a class="anchor" href="#_démarrage_du_poste_de_travail_administrateur"></a>Démarrage du poste de travail administrateur</h3>
+<div class="paragraph">
+<p>Pour réaliser ce tutoriel, toutes les commandes sont exécutées depuis un conteneur démarré à partir de l’image spécialement préparée pour ce tutoriel.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+Le dossier de travail est <code>workspace</code> tout au long du tutoriel
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="title">Démarrage du poste de travail administrateur :</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ mkdir ~/workspace
+$ cd ~/workspace
+$ export WORKSPACE_HOME=$(pwd)
+$ docker run -ti -v $WORKSPACE_HOME:/workspace vhurtevent/jres2022-tuto-obs
+Unable to find image 'vhurtevent/jres2022-tuto-obs:latest' locally
+latest: Pulling from vhurtevent/jres2022-tuto-obs
+d5fd17ec1767: Already exists
+bb69326fe1de: Already exists
+...
+...
+Digest: sha256:9bfd51c41f134f0b354f28fa9bafbbcb547ff16dcc076336eada74970dd8a861
+Status: Downloaded newer image for vhurtevent/jres2022-tuto-obs:latest</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Récupération du contenu du projet Git du tutoriel :</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ git clone https://www.github.com/vhurtevent/jres2022-tuto-obs
+$ cd jres2022-tuto-obs</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_déploiement_de_linfrastructure_du_tenant_foo"><a class="anchor" href="#_déploiement_de_linfrastructure_du_tenant_foo"></a>Déploiement de l’infrastructure du tenant <code>foo</code></h3>
+<div class="listingblock">
+<div class="title">Déploiement de l&#8217;infrastructure avec Terraform</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ cd cd src/infrastructures/foo
+$ ls -l
+total 16
+drwxrwxr-x 3 1000 1000 4096 May 1 14:37 00_network
+drwxrwxr-x 2 1000 1000 4096 May 1 14:22 10_key
+drwxrwxr-x 2 1000 1000 4096 May 1 14:17 20_vm
+drwxrwxr-x 3 1000 1000 4096 May 1 14:23 30_k8s-cluster</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Le projet <code>foo</code> est organisé en 4 sous-projets que l’on va instancier à la suite.</p>
+</div>
+<div class="sect3">
+<h4 id="_création_du_réseau_foo"><a class="anchor" href="#_création_du_réseau_foo"></a>Création du réseau <code>foo</code></h4>
+<div class="paragraph">
+<p>C’est sur ce réseau que toutes les machines virtuelles du tenant <code>foo</code> seront créées.</p>
+</div>
+<div class="listingblock">
+<div class="title">Initialisation du projet, Terraform va télécharger les providers nécessaires</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ cd 00_network
+$ terraform init
+$ terraform apply</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Déploiement du réseau</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">[...]
+Terraform will perform the following actions:
+
+# openstack_networking_network_v2.net_foo will be created
++ resource "openstack_networking_network_v2" "net_foo" {
+[...]
+}
+[...]
+Plan: 3 to add, 0 to change, 0 to destroy.
+
+Do you want to perform these actions?
+Terraform will perform the actions described above.
+Only 'yes' will be accepted to approve.
+
+Enter a value: yes
+[...]
+Apply complete! Resources: 3 added, 0 changed, 0 destroyed.</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_création_de_la_paire_de_clés_pour_accès_ssh_aux_vm_du_tenant_foo"><a class="anchor" href="#_création_de_la_paire_de_clés_pour_accès_ssh_aux_vm_du_tenant_foo"></a>Création de la paire de clés pour accès SSH aux VM du tenant <code>foo</code></h4>
+<div class="paragraph">
+<p>Nous allons générer une paire localement et pousser la clé publique dans OpenStack.</p>
+</div>
+<div class="listingblock">
+<div class="title">La paire de clé pour les VM</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ ssh-keygen -t ecdsa
+Generating public/private ecdsa key pair.
+Enter file in which to save the key (/root/.ssh/id_ecdsa):
+Created directory '/root/.ssh'.
+Enter passphrase (empty for no passphrase):
+Enter same passphrase again:
+Your identification has been saved in /root/.ssh/id_ecdsa
+Your public key has been saved in /root/.ssh/id_ecdsa.pub
+The key fingerprint is:
+SHA256:b8mZDOidvAF2ON0iVN+KOp/4lhPeg+F9iqrG/ib1LOU root@laptop
+The key's randomart image is:
++---[ECDSA 256]---+
+|        .        |
+|       . . .     |
+|      .   . .    |
+|     . + o .     |
+|      B S o      |
+|     o.O+B +     |
+|   . .+B=BO      |
+|    + o+E*+ .    |
+|   oo=+=*..+     |
++----[SHA256]-----+</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">On positionne la clé publique en variable d&#8217;environnment pour Terraform</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">export TF_VAR_ssh_pub_key=$(cat /root/.ssh/id_ecdsa.pub)</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">La paire de clés pour les VM</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ cd ../10_key
+$ terraform init
+[...]
+$ terraform apply</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_machine_vituelle_vm_foo"><a class="anchor" href="#_machine_vituelle_vm_foo"></a>Machine vituelle <code>vm-foo</code></h4>
+<div class="paragraph">
+<p>La VM est une Debian 11 minimale.</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+Le code Terraform déploie volontairement de façon simpliste la VM et ses règles de sécurité pour permettre le bon déroulement du tutoriel.
+Ne pas reproduire dans un contexte de production.
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ cd ../20_vm
+$ terraform init
+[...]
+$ terraform apply</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Sous OpenStack, on peut vérifier la bonne instanciation de la VM</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ openstack server list</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_cluster_kubernetes_kube_foo"><a class="anchor" href="#_cluster_kubernetes_kube_foo"></a>Cluster Kubernetes kube-foo</h4>
+<div class="paragraph">
+<p>Pour les besoins du tutoriel, le cluster kube-foo dispose des caractéristiques suivantes :</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Nombre de nœuds (ControlePlane &amp; Worker)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Système d’exploitation</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Fedora CoreOS 35</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Distribution Kubernetes</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Kubernetes 1.21 via RKE 1.3</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Dimensionnement des noeuds</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">m4.medium (4cpu/4Go)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Réseau</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Canal (Calico+Flannel)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Ingress Controller</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ingress-nginx via Helm Chart 4.0.16</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Pour simplifier l’infrastructure, nous n’utiliserons pas de volume persistant. En situation réelle de production, il sera nécessaire d’y recourir pour certaines fonctionnalités (compaction notamment).
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ cd ../30_k8s-cluster
+$ terraform init
+[...]
+$ terraform apply</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Une fois déployé, nous pouvons récupérer les informations de connexion via la sortie (output) Terraform <code>kubeconfig</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ terraform output -raw kubeconfig > ~/.kube/kube-foo.yaml</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">On lance <code>kubie ctx</code> ou son alias <code>kctx</code> pour se positionner dans le contexte du cluster Kubernetes kube-foo</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ kubie ctx
+$ kubectl get node -o wide</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_déploiement_de_linfrastructure_du_tenant_hoster"><a class="anchor" href="#_déploiement_de_linfrastructure_du_tenant_hoster"></a>Déploiement de l’infrastructure du tenant <code>hoster</code></h3>
+<div class="paragraph">
+<p>La structure du projet <code>hoster</code> est très semblable à <code>foo</code>.
+Les actions peuvent être réalisées de la même façon depuis le dossier <code>src/infractructure/hoster</code>.</p>
+</div>
+<div class="sect3">
+<h4 id="_création_du_réseau_hoster"><a class="anchor" href="#_création_du_réseau_hoster"></a>Création du réseau <code>hoster</code></h4>
+<div class="paragraph">
+<p>C’est sur réseau que toutes les machines virtuelles du tenant <code>hoster</code> seront créées.</p>
+</div>
+<div class="listingblock">
+<div class="title">Initialisation du projet, Terraform va télécharger les providers nécessaires</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ cd ../../hoster/00_network
+$ terraform init
+$ terraform apply</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Déploiement du réseau</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">[...]
+Terraform will perform the following actions:
+
+# openstack_networking_network_v2.net_hoster will be created
++ resource "openstack_networking_network_v2" "net_hoster" {
+[...]
+}
+[...]
+Plan: 3 to add, 0 to change, 0 to destroy.
+
+Do you want to perform these actions?
+Terraform will perform the actions described above.
+Only 'yes' will be accepted to approve.
+
+Enter a value: yes
+[...]
+Apply complete! Resources: 3 added, 0 changed, 0 destroyed.</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_création_de_la_paire_de_clés_pour_accès_ssh_aux_vm_du_tenanthoster"><a class="anchor" href="#_création_de_la_paire_de_clés_pour_accès_ssh_aux_vm_du_tenanthoster"></a>Création de la paire de clés pour accès SSH aux VM du tenant`hoster`</h4>
+<div class="paragraph">
+<p>Nous allons réutiliser la clé générée précédemment pour le tenant <code>hoster</code>.</p>
+</div>
+<div class="listingblock">
+<div class="title">La paire de clés pour les VM</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ cd ../10_key
+$ terraform init
+[...]
+$ terraform apply</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_machine_vituelle_vm_hoster"><a class="anchor" href="#_machine_vituelle_vm_hoster"></a>Machine vituelle <code>vm-hoster</code></h4>
+<div class="paragraph">
+<p>La VM est une Debian 11 avec Docker préinstallé. Elle va nous permettre d’exécuter les composants suivants :</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Minio</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Stockage objet compatible S3</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Thanos</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Centralisation des métriques</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Loki</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Centralisation des journaux</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+Le code Terraform déploie volontairement de façon simpliste la VM et ses règles de sécurité pour permettre le bon déroulement du tutoriel.
+Ne pas reproduire dans un contexte de production.
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ cd ../20_vm
+$ terraform init
+[...]
+$ terraform apply</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Sous OpenStack, on peut vérifier la bonne instanciation de la VM</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ openstack server list</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_cluster_kubernetes_kube_hoster"><a class="anchor" href="#_cluster_kubernetes_kube_hoster"></a>Cluster Kubernetes kube-hoster</h4>
+<div class="paragraph">
+<p>Pour les besoins du tutoriel, le cluster kube-hoster dispose des caractéristiques suivantes :</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Nombre de noeuds (ControlePlane &amp; Worker)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Système d&#8217;exploitation</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Fedora CoreOS 35</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Distribution Kubernetes</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Kubernetes 1.21 via RKE 1.3</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Dimensionnement des noeuds</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">m4.medium (4cpu/4Go)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Réseau</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Canal (Calico+Flannel)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Ingress Controller</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ingress-nginx via Helm Chart 4.0.16</p></td>
+</tr>
+</tbody>
+</table>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ cd ../30_k8s-cluster
+$ terraform init
+[...]
+$ terraform apply</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Une fois déployé, nous pouvons récupérer les informations de connexion via la sortie (output) Terraform <code>kubeconfig</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ terraform output -raw kubeconfig > ~/.kube/kube-hoster-mutu.yaml</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">On lance <code>kubie ctx</code> ou son alias <code>kctx</code> pour se positionner dans le contexte du cluster Kubernetes kube-hoster</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ kctx kube-hoster
+$ kubectl get node -o wide</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_configuration_etchosts"><a class="anchor" href="#_configuration_etchosts"></a>Configuration <code>/etc/hosts</code></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>À l’issue du déploiement de ces 2 projets, on peut déjà positionner quelques noms dans notre fichier /etc/hosts.</p>
+</div>
+<div class="listingblock">
+<div class="title">On récupère les IP des 4 VMs instanciées</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ openstack server list</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>On identifie l’IP des VMs dans la sortie OpenStack et on ajoute les entrées correspondantes dans <code>/etc/hosts</code></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">172.16.101.69 vm-foo vm-foo.foo
+172.16.101.123 kube-foo kube-foo.foo
+172.16.102.113 vm-hoster vm-hoster.hoster
+172.16.102.141 kube-hoster-mutu kube-hoster-mutu.hoster</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_déploiements_des_applications"><a class="anchor" href="#_déploiements_des_applications"></a>Déploiements des applications</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_pour_le_compte_de_lorganisation_foo"><a class="anchor" href="#_pour_le_compte_de_lorganisation_foo"></a>Pour le compte de l’organisation <code>foo</code></h3>
+<div class="sect3">
+<h4 id="_sur_la_machine_virtuelle_vm_foo"><a class="anchor" href="#_sur_la_machine_virtuelle_vm_foo"></a>Sur la machine virtuelle <code>vm-foo</code></h4>
+<div class="listingblock">
+<div class="title">On vérifie que vm-foo est disponible et joignable :</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ ssh debian@vm-foo uptime</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">On installe Nginx, Prometheus Nginx Exporter, Prometheus Node-Exporter :</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ ssh debian@vm-foo
+Linux vm-tenant-a 5.10.0-8-amd64 #1 SMP Debian 5.10.46-4 (2021-08-03) x86_64
+
+The programs included with the Debian GNU/Linux system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
+permitted by applicable law.</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">debian@vm-foo:~$ sudo apt update
+debian@vm-foo:~$ sudo apt install nginx prometheus-nginx-exporter prometheus-node-exporter
+debian@vm-foo:~$ echo "
+server {
+listen localhost:81;
+location /metrics {
+stub_status on;
+}
+}" | sudo tee /etc/nginx/sites-enabled/metrics
+debian@vm-foo:~$ echo "ARGS=\" -nginx.scrape-uri http://localhost:81/metrics\"" | sudo tee /etc/default/prometheus-nginx-exporter
+debian@vm-foo:~$ sudo systemctl restart nginx prometheus-nginx-exporter</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>On vérifie le bon fonctionnement depuis notre poste de travail :</p>
+</div>
+<div class="listingblock">
+<div class="title">Nginx qui répond en HTTP :</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ curl http://vm-foo</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Node-exporter qui affiche les métriques de la VM :</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ curl http://vm-foo:9100/metrics</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Prometheus Nginx Exporter qui affiche les métriques du serveur Nginx :</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ curl http://vm-foo:9113/metrics</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Nous reviendrons plus tard sur le contenu de cette page.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_sur_le_cluster_kube_foo"><a class="anchor" href="#_sur_le_cluster_kube_foo"></a>Sur le cluster <code>kube-foo</code></h4>
+<div class="listingblock">
+<div class="title">On se positionne sur le contexte du cluster <code>foo</code></div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ kctx kube-foo</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">On crée le namespace <code>pif</code> dédié à l&#8217;application <code>pif</code></div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ kubectl create namespace pif
+$ kns pif</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">On déploie l&#8217;instance <code>pif</code> de l&#8217;application de démonstration demo-jres</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ cd /workspace/jres2022-tuto-obs
+$ helm upgrade pif --install src/app/demo-jres \
+--set ingress.host=pif.foo \
+--set extraLabels.tenant=foo \
+--set extraLabels.app=pif
+                                     --set extraLabels.app=pif
+--set extraLabels.app=pif</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Vérification que l’application s’exécute correctement et affichage des labels</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ kubectl get pods --output wide --show-labels</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">NAME READY STATUS RESTARTS AGE IP NODE NOMINATED NODE READINESS GATES LABELS
+pif-demo-jres-5f4d6c64-w2hgz 1/1 Running 0 15s 10.42.0.9 172.16.101.123 &lt;none&gt; &lt;none&gt; app.kubernetes.io/instance=pif,app.kubernetes.io/name=demo-jres,app=pif,checksum/app=32aabbfa,pod-template-hash=5f4d6c64,tenant=foo</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<div class="title">Vérification que l’application est joignable</div>
+<p>On fait en sorte de pouvoir résoudre le nom <code>pif.foo</code>.</p>
+</div>
+<div class="listingblock">
+<div class="title">Ajout au fichier /etc/hosts</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">172.16.101.123 pif pif.foo</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Accès depuis un navigateur à l’adresse : <a href="http://pif.foo" class="bare">http://pif.foo</a></p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_sur_le_cluster_kube_hoster_mutu"><a class="anchor" href="#_sur_le_cluster_kube_hoster_mutu"></a>Sur le cluster <code>kube-hoster-mutu</code></h4>
+<div class="listingblock">
+<div class="title">On se positionne sur le contexte du cluster <code>kube-hoster-mutu</code></div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ kctx kube-hoster-mutu</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Création d’un namespace <code>paf</code></div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ kubectl create namespace paf
+$ kns paf</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Déploiement de l’instance <code>paf</code> de l’application de démonstration <code>demo-jres</code></div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ helm upgrade paf --install src/app/demo-jres \
+--set ingress.host=paf.foo \
+--set extraLabels.tenant=foo \
+--set extraLabels.app=paf
+                                     --set extraLabels.app=paf
+--set extraLabels.app=paf</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Vérification que l’application s’exécute et affichage des labels</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ kubectl get pods --output wide --show-labels</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">NAME READY STATUS RESTARTS AGE IP NODE NOMINATED NODE READINESS GATES LABELS
+paf-demo-jres-5d9bbf97d8-7zxcf 1/1 Running 0 9s 10.42.0.9 172.16.102.141 &lt;none&gt; &lt;none&gt; app.kubernetes.io/instance=paf,app.kubernetes.io/name=demo-jres,app=paf,checksum/app=32aabbfa,pod-template-hash=5d9bbf97d8,tenant=foo</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<div class="title">Vérification que l&#8217;application est joignable</div>
+<p>On fait en sorte de pouvoir résoudre le nom <code>paf.foo</code>.</p>
+</div>
+<div class="listingblock">
+<div class="title">Ajout au fichier /etc/hosts :</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">172.16.102.141 paf paf.foo</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Accès depuis un navigateur à l’adresse <a href="http://paf.foo" class="bare">http://paf.foo</a></p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_pour_le_compte_de_lorganisation_bar"><a class="anchor" href="#_pour_le_compte_de_lorganisation_bar"></a>Pour le compte de l’organisation <code>bar</code></h3>
+<div class="sect3">
+<h4 id="_sur_le_cluster_kube_hoster_mutu_2"><a class="anchor" href="#_sur_le_cluster_kube_hoster_mutu_2"></a>Sur le cluster <code>kube-hoster-mutu</code></h4>
+<div class="listingblock">
+<div class="title">Création d’un namespace <code>pouf</code></div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ kubectl create namespace pouf
+$ kns pouf</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Déploiement l’instance <code>pouf</code> de l’application de démonstration <code>demo-jres</code></div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ helm upgrade pouf --install src/app/demo-jres \
+--set ingress.host=pouf.bar \
+--set extraLabels.tenant=bar \
+--set extraLabels.app=pouf
+                                     --set extraLabels.app=pouf
+--set extraLabels.app=pouf</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Vérification que l’application s’exécute</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ kubectl get pods --output wide --show-labels</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">NAME READY STATUS RESTARTS AGE IP NODE NOMINATED NODE READINESS GATES LABELS
+pouf-demo-jres-77c486645b-nmx64 1/1 Running 0 7s 10.42.0.10 172.16.102.141 &lt;none&gt; &lt;none&gt; app.kubernetes.io/instance=pouf,app.kubernetes.io/name=demo-jres,app=pouf,checksum/app=32aabbfa,pod-template-hash=77c486645b,tenant=bar</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>On fait en sorte de pouvoir résoudre le nom <code>paf.foo</code>.</p>
+</div>
+<div class="listingblock">
+<div class="title">Ajout au fichier /etc/hosts :</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">172.16.102.141 pouf pouf.bar</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Accès depuis un navigateur à l’adresse <a href="http://pouf.bar" class="bare">http://pouf.bar</a></p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_on_résume"><a class="anchor" href="#_on_résume"></a>On résume</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Après cette mise en place, nous avons quatre applications appartenant à deux tenants (foo et bar) déployées sur 3 infrastructures : une VM, un cluster Kubernetes appartenant à un des tenants et un autre cluster Kubernetes appartenant à l’hébergeur.</p>
+</div>
+<div class="paragraph">
+<p>Tous ces composants (VM, clusters Kubernetes et les applications déployées) vont produire des métriques et journaux que l’on va pouvoir récupérer. Ils ont chacun leurs particularités, référencées sous forme de labels qui viendront qualifier toutes les métriques et journaux qui seront centralisés, stockés et requêtés.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="_images/infra-apps-labels.png" alt="Infrastructures et les applications déployées avec les labels qui les caractérisent">
+</div>
+</div>
+<div class="paragraph">
+<p>Les applications sont joignables à ces adresses depuis le poste de travail :</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Adresse</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Tenant</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Description</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://vm-foo.foo/" class="bare">http://vm-foo.foo/</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">foo</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Serveur Nginx simple avec les métriques activées</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://pif.foo/" class="bare">http://pif.foo/</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">foo</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">demo-jres « pif » sur le cluster du tenant foo qui produit des métriques custom</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://paf.foo/" class="bare">http://paf.foo/</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">foo</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">demo-jres « paf » sur le cluster de l’hébergeur qui produit des métriques custom</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://pouf.bar/" class="bare">http://pouf.bar/</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">bar</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">demo-jres « pouf » sur le cluster de l’hébergeur qui produit des métriques custom</p></td>
+</tr>
+</tbody>
+</table>
+<div class="listingblock">
+<div class="title">Extrait du fichier /etc/hosts pour résoudre les noms des applications</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">172.16.101.69 vm-foo vm-foo.foo
+172.16.101.123 kube-foo kube-foo.foo
+172.16.102.113 vm-hoster vm-hoster.hoster
+172.16.102.141 kube-hoster-mutu kube-hoster-mutu.hoster
+
+172.16.101.123 pif pif.foo
+172.16.102.141 paf paf.bar
+172.16.102.141 pouf pouf.bar</code></pre>
+</div>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>This page was built using the Antora default UI.</p>
+  <p>The source code for this UI is licensed under the terms of the MPL-2.0 license.</p>
+</footer>
+<script src="./_/js/site.js"></script>
+<script async src="./_/js/vendor/highlight.js"></script>
+  </body>
+</html>

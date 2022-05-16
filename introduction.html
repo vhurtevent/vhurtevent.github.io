@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Introduction :: [ALERT] SUPERVISION IS DOWN, OBSERVABILITY IS UP</title>
+    <link rel="canonical" href="https://vhurtevent.github.io/introduction.html">
+    <meta name="generator" content="Antora 3.0.0">
+    <link rel="stylesheet" href="./_/css/site.css">
+    <link rel="stylesheet" href="./_/css/extra.css">    <script>var uiRootPath = './_'</script>
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://vhurtevent.github.io">[ALERT] SUPERVISION IS DOWN, OBSERVABILITY IS UP</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="https://www.github.com/vhurtevent/jres2022-tuto-obs">Github</a>
+        <a class="navbar-item" href="https://hub.docker.com/u/vhurtevent">Docker</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="ROOT" data-version="master">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="introduction.html">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="prerequis.html">Pré-requis</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="mise-en-place.html">Mise en place</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="stockage-objet.html">Stockage Objet (S3)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="metriques.html">Centralisation et consultation des métriques avec Thanos</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="journaux.html">Centralisation et consultation des journaux avec Loki</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="bibliographie.html">Bilbiographie &amp; Liens</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="introduction.html">[ALERT] SUPERVISION IS DOWN, OBSERVABILITY IS UP</a></li>
+    <li><a href="introduction.html">Introduction</a></li>
+  </ul>
+</nav>
+  <div class="edit-this-page"><a href="file:///home/vincent/workspace/pcscol/ops/jres2022/docs/modules/ROOT/pages/introduction.adoc">Edit this Page</a></div>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="5">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Introduction</h1>
+<div class="paragraph">
+<p>Ce tutoriel a pour objectif la mise en place d’une centralisation de métriques et de journaux performante et économique.</p>
+</div>
+<div class="paragraph">
+<p>Après le déploiement rapide d’une infrastructure définie logiciellement qui comporte :</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>plusieurs machines virtuelles productrices de métriques et de journaux pour la supervision d’applications non conteneurisées ;</p>
+</li>
+<li>
+<p>plusieurs clusters Kubernetes qui permettront d’illustrer l’utilisation de Prometheus et les avantages de Thanos notamment ses fonctionnalités de supervision globale (multi clusters) ;</p>
+</li>
+<li>
+<p>plusieurs applications déployées dans Kubernetes, productrices de métriques et de journaux ;</p>
+</li>
+<li>
+<p>un stockage objet compatible S3 pour le stockage des données centralisées ;</p>
+</li>
+<li>
+<p>Nous détaillerons au travers d’un pas à pas didactique les étapes de préparation et de déploiement des briques techniques permettant d’aboutir à une plateforme de centralisation et de consultation des métriques et des journaux.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><a href="mise-en-place.html" class="xref page">Mise en place du tutoriel</a></p>
+</div>
+<div class="paragraph">
+<p>La pile technique retenue pour la centralisation des métriques est constituée de :</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>exporters, agents logiciels qui exposeront des métriques pour Prometheus ;</p>
+</li>
+<li>
+<p>Prometheus, qui moissonnera les métriques exposées par les différents exporters et applications productrices de métriques ;</p>
+</li>
+<li>
+<p>Thanos, qui se chargera de la centralisation des métriques sur un stockage objet et qui offrira une interface unique pour les interroger ;</p>
+</li>
+<li>
+<p>Grafana, qui nous permettra de fouiller les métriques et d’en faire des graphiques et tableaux de bord.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><a href="metriques.html" class="xref page">Centralisation et consultation des métriques avec Thanos</a></p>
+</div>
+<div class="paragraph">
+<p>La pile technique pour la centralisation des journaux est constituée de :</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Promtail, un agent qui recoltera les journaux produits par les systèmes et applications et permettra de les enrichir de metadonnées ;</p>
+</li>
+<li>
+<p>Loki, qui s’occupera d’ingérer les journaux transmis par les agents Promtail, de les stocker sur un stockage objet et de les indexer pour faciliter leur fouille;</p>
+</li>
+<li>
+<p>Grafana, déjà utilisé pour les métriques, qui nous offrira une vue et une recherche unifiée sur les journaux.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><a href="journaux.html" class="xref page">Centralisation et consultation des journaux avec Loki</a></p>
+</div>
+<div class="paragraph">
+<p>Nous ponctuerons le tutoriel de notre retour d’expérience sur ces outils dans le cadre de la construction et de l’hébergement du logiciel Pégase au sein de PC-SCOL.</p>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>This page was built using the Antora default UI.</p>
+  <p>The source code for this UI is licensed under the terms of the MPL-2.0 license.</p>
+</footer>
+<script src="./_/js/site.js"></script>
+<script async src="./_/js/vendor/highlight.js"></script>
+  </body>
+</html>

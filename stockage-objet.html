@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Untitled :: [ALERT] SUPERVISION IS DOWN, OBSERVABILITY IS UP</title>
+    <link rel="canonical" href="https://vhurtevent.github.io/stockage-objet.html">
+    <meta name="generator" content="Antora 3.0.0">
+    <link rel="stylesheet" href="./_/css/site.css">
+    <link rel="stylesheet" href="./_/css/extra.css">    <script>var uiRootPath = './_'</script>
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://vhurtevent.github.io">[ALERT] SUPERVISION IS DOWN, OBSERVABILITY IS UP</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="https://www.github.com/vhurtevent/jres2022-tuto-obs">Github</a>
+        <a class="navbar-item" href="https://hub.docker.com/u/vhurtevent">Docker</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="ROOT" data-version="master">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="introduction.html">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="prerequis.html">Pré-requis</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="mise-en-place.html">Mise en place</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="stockage-objet.html">Stockage Objet (S3)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="metriques.html">Centralisation et consultation des métriques avec Thanos</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="journaux.html">Centralisation et consultation des journaux avec Loki</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="bibliographie.html">Bilbiographie &amp; Liens</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="introduction.html">[ALERT] SUPERVISION IS DOWN, OBSERVABILITY IS UP</a></li>
+    <li><a href="stockage-objet.html">Stockage Objet (S3)</a></li>
+  </ul>
+</nav>
+  <div class="edit-this-page"><a href="file:///home/vincent/workspace/pcscol/ops/jres2022/docs/modules/ROOT/pages/stockage-objet.adoc">Edit this Page</a></div>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="5">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<div class="sect1">
+<h2 id="_stockage_objet_cible"><a class="anchor" href="#_stockage_objet_cible"></a>Stockage objet cible</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Un espace de stockage objet, compatible S3, doit être accessible pour suivre le tutoriel.</p>
+</div>
+<div class="paragraph">
+<p>Nous utilisons une instance du logiciel Minio que l’on va démarrer sur la VM <code>vm-hoster</code>.</p>
+</div>
+<div class="paragraph">
+<p>Minio est un logiciel libre sous licence GNU Affero General Public License v3.0 réputé pour sa très bonne prise en charge des API S3. Il est très facile à mettre en place et efficace pour des tests rapides.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<caption class="title">Table 1. Quelques pointeurs pour Minio :</caption>
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Minio</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://min.io/" class="bare">https://min.io/</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Documentation</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://docs.min.io/" class="bare">https://docs.min.io/</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Image Docker</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://hub.docker.com/r/minio/minio" class="bare">https://hub.docker.com/r/minio/minio</a></p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>On utilise Docker pour lancer un conteneur à partir de l’image publique officielle Minio.
+L’API S3 sera accessible sur le port 9000 en HTTP et la console d’administration sur le port 9001.
+Pour les besoins du tutoriel, la volumétrie nécessaire n’est pas importante, on spécifie juste l’utilisation d’un volume qui utilisera le dossier <code>/data</code> de l’hôte.</p>
+</div>
+<div class="paragraph">
+<p>Minio peut être utilisé dans des contextes de production dans des déploiements Kubernetes, baremetal ou plus simplement en passerelle S3 comme dans le cadre de ce tutoriel.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ ssh debian@vm-hoster
+$ sudo mkdir /data
+$ docker run --detach \
+--name minio \
+--publish 9000:9000 \
+--publish 9001:9001 \
+--volume /data:/data \
+minio/minio server /data --console-address ":9001"
+Unable to find image 'minio/minio:latest' locally
+latest: Pulling from minio/minio
+54e56e6f8572: Pull complete
+4f8ddd7f5a75: Pull complete
+20259cb27054: Pull complete
+c4fa7f41817f: Pull complete
+70c830ca9eb5: Pull complete
+201c833a22dd: Pull complete
+a9c289f97128: Pull complete
+Digest: sha256:e2b8f44d13b03a661c754b23583b72d51347608952070adcdd929a0dfadd2002
+Status: Downloaded newer image for minio/minio:latest
+55e9090edc0ee61052556f222d7d2fabeca05d59e6398cd11ede31ca5f55d191</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>On peut se connecter à la console d’administration Minio en pointant notre navigateur à l’adresse <a href="http://vm-hoster:9001" class="bare">http://vm-hoster:9001</a>.
+Les identifiants par défaut :</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">login</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">minioadmin</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">password</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">minioadmin</p></td>
+</tr>
+</tbody>
+</table>
+<div class="imageblock">
+<div class="content">
+<img src="_images/minio-console-minioadmin.png" alt="minio console minioadmin">
+</div>
+</div>
+<div class="paragraph">
+<p>On navigue dans l’interface pour créer un compte dédié au tutoriel, avec les droits <code>read-write</code>:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">login</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">tuto</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">password</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">tutojres</p></td>
+</tr>
+</tbody>
+</table>
+<div class="imageblock">
+<div class="content">
+<img src="_images/minio-create-user.png" alt="minio create user">
+</div>
+</div>
+<div class="paragraph">
+<p>On peut se reconnecter à la console Minio avec ce nouveau compte pour créer les buckets nécessaires au tutoriel. Les buckets sont créés sans stratégie particulière de cycle de vie des objets.</p>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+On note que pour l&#8217;endpoint de l’API S3 on utilise l’adresse IP de la vm-hoster et non son nom DNS <code>vm-hoster.hoster</code> qui ne pourra être résolu depuis l’ensemble de l’infrastructure utilisée dans le cadre du tutoriel.
+</td>
+</tr>
+</table>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Endpoint</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Bucket</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AccessKey</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SecretKey</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">172.16.102.113:9000</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">metrics</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">tuto</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">tutojres</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">172.16.102.113:9000</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">logs</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">tuto</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">tutojres</p></td>
+</tr>
+</tbody>
+</table>
+<div class="imageblock">
+<div class="content">
+<img src="_images/minio-create-bucket.png" alt="minio create bucket">
+</div>
+</div>
+<div class="paragraph">
+<p>On peut vérifier l’accès aux buckets par le nouveau compte, soit directement depuis la console, soit depuis CLI AWS ou <code>s3cmd</code> disponible dans le conteneur.</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing des buckets depuis les CLI AWS</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ export AWS_ACCESS_KEY_ID=tuto
+$ export export AWS_SECRET_ACCESS_KEY=tutojres
+$ aws --endpoint http://vm-hoster:9000 s3 ls
+2022-05-01 16:41:22 logs
+2022-05-01 16:41:31 metrics</code></pre>
+</div>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>This page was built using the Antora default UI.</p>
+  <p>The source code for this UI is licensed under the terms of the MPL-2.0 license.</p>
+</footer>
+<script src="./_/js/site.js"></script>
+<script async src="./_/js/vendor/highlight.js"></script>
+  </body>
+</html>

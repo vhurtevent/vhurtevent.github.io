@@ -1,0 +1,1652 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Centralisation des métriques :: [ALERT] SUPERVISION IS DOWN, OBSERVABILITY IS UP</title>
+    <link rel="canonical" href="https://vhurtevent.github.io/metriques.html">
+    <meta name="generator" content="Antora 3.0.0">
+    <link rel="stylesheet" href="./_/css/site.css">
+    <link rel="stylesheet" href="./_/css/extra.css">    <script>var uiRootPath = './_'</script>
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://vhurtevent.github.io">[ALERT] SUPERVISION IS DOWN, OBSERVABILITY IS UP</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="https://www.github.com/vhurtevent/jres2022-tuto-obs">Github</a>
+        <a class="navbar-item" href="https://hub.docker.com/u/vhurtevent">Docker</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="ROOT" data-version="master">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="introduction.html">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="prerequis.html">Pré-requis</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="mise-en-place.html">Mise en place</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="stockage-objet.html">Stockage Objet (S3)</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="metriques.html">Centralisation et consultation des métriques avec Thanos</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="journaux.html">Centralisation et consultation des journaux avec Loki</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="bibliographie.html">Bilbiographie &amp; Liens</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="introduction.html">[ALERT] SUPERVISION IS DOWN, OBSERVABILITY IS UP</a></li>
+    <li><a href="metriques.html">Centralisation et consultation des métriques avec Thanos</a></li>
+  </ul>
+</nav>
+  <div class="edit-this-page"><a href="file:///home/vincent/workspace/pcscol/ops/jres2022/docs/modules/ROOT/pages/metriques.adoc">Edit this Page</a></div>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="5">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Centralisation des métriques</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>L’infrastructure déployée précédemment est composée de différents producteurs de métriques. Le tableau suivant dresse une liste exhaustive des métriques que l’on pourrait moissonner et centraliser.</p>
+</div>
+<div class="paragraph">
+<p>Les métriques traitées dans le cadre du tutoriel sont identifiées.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Couche</th>
+<th class="tableblock halign-left valign-top">Portée</th>
+<th class="tableblock halign-left valign-top">Source</th>
+<th class="tableblock halign-left valign-top">Traité dans le tutoriel</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Demo-jres</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">États internes de l’application</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Les composants exposent nativement leurs métriques</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Oui</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Nginx</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">États internes du serveur web</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">nginx-prometheus-exporter</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Oui</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Kubernetes</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Ressources Kube : pod, deployment, service, etc</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Kube-State-Metrics</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Oui</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Kubernetes</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Composants Kube : etcd, scheduler, kubelet, etc</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Les composants exposent nativement leurs métriques</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Oui</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">VM</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Machine virtuelle, système</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Node Exporter</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Oui</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">IaaS</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Plateforme de virtualisation</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Exporter OpenStack</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Non</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Hyperviseur</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Serveur physique exécutant les VMs</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Node Exporter</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Non</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Datacenter</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Équipements électriques, refroidissement, etc</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Exporter SNMP ou spécifique à écrire</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Non</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_prometheus"><a class="anchor" href="#_prometheus"></a>Prometheus</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Le projet Prometheus est constitué de plusieurs composants. Nous ne les utiliserons pas tous dans le cadre de ce tutoriel, nous nous concentrerons sur :</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Prometheus Server</p>
+</li>
+<li>
+<p>Les exporters</p>
+</li>
+<li>
+<p>Prometheus Expression Browser (Web UI)</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Documentation officielle sur l’architecture de Prometheus : <a href="https://prometheus.io/docs/introduction/overview/#architecture" class="bare">https://prometheus.io/docs/introduction/overview/#architecture</a></p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://prometheus.io/assets/architecture.png" alt="architecture">
+</div>
+</div>
+<div class="sect2">
+<h3 id="_prometheus_server"><a class="anchor" href="#_prometheus_server"></a>Prometheus Server</h3>
+<div class="paragraph">
+<p>Le Prometheus Server a pour mission le stockage de métriques qu’il vient moissonner auprès des producteurs dans un mode PULL
+Prometheus Server connaît les producteurs, soit par configuration statique (définies au sein de fichiers de configuration), soit par des mécanismes de Service Discovery (SD).
+Cette fonctionnalité est particulièrement intéressante, car dans une infrastructure qui vit, qui évolue rapidement et qui est potentiellement automatisée, il devient impossible de fonctionner avec des configurations statiques.</p>
+</div>
+<div class="paragraph">
+<p>Prometheus sait utiliser différents types de SD : <a href="https://prometheus.io/docs/prometheus/latest/configuration/configuration/" class="bare">https://prometheus.io/docs/prometheus/latest/configuration/configuration/</a></p>
+</div>
+<div class="paragraph">
+<p>Il sait par exemple nativement découvrir les producteurs (cible ou target dans le vocabulaire Prometheus) auprès de services assez simples :</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>HTTP (SD JSON)</p>
+</li>
+<li>
+<p>DNS</p>
+</li>
+<li>
+<p>Consul</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Il sait aussi consommer les API d&#8217;infrastructures Cloud ou de virtualisation :</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Azure</p>
+</li>
+<li>
+<p>EC2</p>
+</li>
+<li>
+<p>OpenStack</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Ou en interrogeant des solutions d’orchestration d’application ou de conteneur :</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Docker/Docker Swarm</p>
+</li>
+<li>
+<p>Kubernetes</p>
+</li>
+<li>
+<p>Marathon</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>INFO: Nous utiliserons les services discovery HTTP_SD et Kubernetes_SD dans le cadre de ce tutoriel</p>
+</div>
+<div class="paragraph">
+<p>Une fois les métriques moissonnées auprès des producteurs (Services), il va les stocker dans un format spécifique dédié au stockage de séries temporelles ou timeseries (TSDB).</p>
+</div>
+<div class="paragraph">
+<p>Pour plus d’informations sur la technologie de stockage de Prometheus :</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Modèle de donnée : <a href="https://prometheus.io/docs/concepts/data_model/" class="bare">https://prometheus.io/docs/concepts/data_model/</a></p>
+</li>
+<li>
+<p>Le stockage dans Prometheus : <a href="https://prometheus.io/docs/prometheus/latest/storage/" class="bare">https://prometheus.io/docs/prometheus/latest/storage/</a></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Quand il moissonne les métriques, Prometheus va lui attacher des labels. Ils peuvent être définis par le producteur lui-même et peuvent être modifiés et augmentés par Prometheus en fonction de sa configuration.</p>
+</div>
+<div class="paragraph">
+<p>Une métrique est caractérisée par :</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>son nom</p>
+</li>
+<li>
+<p>ses labels</p>
+</li>
+<li>
+<p>sa valeur</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Prometheus supporte nativement 4 types de métriques : <a href="https://prometheus.io/docs/concepts/metric_types/" class="bare">https://prometheus.io/docs/concepts/metric_types/</a></p>
+</div>
+<div class="paragraph">
+<p>INFO: L&#8217;application <code>demo_jres</code> développée pour ce tutoriel expose 3 types de métriques.</p>
+</div>
+<div class="paragraph">
+<p>Prometheus expose une API HTTP qui va nous permettre d’interagir avec lui et de lui soumettre des requêtes dans le langage PromQL.</p>
+</div>
+<div class="paragraph">
+<p>PromQL : <a href="https://prometheus.io/docs/prometheus/latest/querying/basics/" class="bare">https://prometheus.io/docs/prometheus/latest/querying/basics/</a></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_exporter"><a class="anchor" href="#_exporter"></a>Exporter</h3>
+<div class="paragraph">
+<p>Les exporters sont les producteurs de métriques évoqués plus tôt.
+Un système ou une application peut très bien être conçu pour exposer de lui-même des métriques pour les rendre accessibles à Prometheus qui viendra les moissonner de façon régulière. Cela nécessite de les exposer dans le format attendu par Prometheus et qu’elles soient accessibles va une simple requête HTTP GET.</p>
+</div>
+<div class="paragraph">
+<p>Pour les systèmes qui n’ont pas nativement ce niveau d’intégration avec Prometheus, il existe des exporters, des agents logiciels, qui vont récupérer ou calculer des métriques depuis le système pour ensuite les exposer dans une forme compatible avec Prometheus.</p>
+</div>
+<div class="paragraph">
+<p>Il existe de très nombreux exporters pour outiller les composants d’infrastructures et d’applications : <a href="https://prometheus.io/docs/instrumenting/exporters/" class="bare">https://prometheus.io/docs/instrumenting/exporters/</a></p>
+</div>
+<div class="paragraph">
+<p>Un certain nombre de bibliothèques de développement dans différents langages permettent également l’écriture d’exporter assez facilement.</p>
+</div>
+<div class="paragraph">
+<p>INFO : L’application <code>demo-jres</code> écrite en Python utilise la bibliothèque <code>client_prometheus</code> pour exposer des métriques conçus pour le tutoriel.</p>
+</div>
+<div class="paragraph">
+<p>INFO: Nous utiliserons l&#8217;exporter <code>nginx-prometheus-exporter</code> pour exposer les métriques de l’instance Nginx déployée sur la vm vm-foo.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_prometheus_expression_browser_web_ui"><a class="anchor" href="#_prometheus_expression_browser_web_ui"></a>Prometheus Expression Browser (Web UI)</h3>
+<div class="paragraph">
+<p>Prometheus offre une interface Web volontairement simple en termes de visualisation mais qui permet de vérifier rapidement le bon fonctionnement de Prometheus :</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Découverte des cibles</p>
+</li>
+<li>
+<p>Visualisation de la configuration en cours d’exécution</p>
+</li>
+<li>
+<p>Requête et graphiques des métriques</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_architecture_envisagée"><a class="anchor" href="#_architecture_envisagée"></a>Architecture envisagée</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Nous considérons Prometheus comme une brique intermédiaire de collecte de métriques. L’idée est de définir des zones où Prometheus peut être autonome.</p>
+</div>
+<div class="paragraph">
+<p>Voici les zones retenues dans le cadre du tutoriel :</p>
+</div>
+<div class="paragraph">
+<div class="title">Infrastructures du tenant <code>foo</code></div>
+<p>Prometheus déployé au sein du cluster <code>kube-foo</code>, il moissonnera les métriques exposées à tous les niveaux au sein du cluster et aussi les métriques exposées par la machine virtuelle <code>vm-foo</code> (métriques du système et les métriques Nginx).</p>
+</div>
+<div class="paragraph">
+<div class="title">Infrastructures de l’hébergeur <code>hoster</code></div>
+<p>Prometheus déployé au sein du cluster <code>kube-hoster</code>, il moissonnera les métriques exposées à tous les niveaux au sein du cluster.</p>
+</div>
+<div class="sect2">
+<h3 id="_méthodes_de_déploiement_de_prometheus"><a class="anchor" href="#_méthodes_de_déploiement_de_prometheus"></a>Méthodes de déploiement de Prometheus</h3>
+<div class="paragraph">
+<p>Il existe différentes méthodes pour déployer Prometheus au sein de Kubernetes, via :</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>des manifests statiques (fichiers de configuration YAML statiques)</p>
+</li>
+<li>
+<p>un chart Helm (format de paquet pour le déploiement d’application dans Kubernetes)</p>
+</li>
+<li>
+<p>un operator pour une gestion intégrée via Kubernetes de la configuration de Prometheus (services à moissonner, gestion des labels, etc)</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Pour nous simplifier le déploiement de Prometheus mais également des exporters nécessaires à la production et l’exposition des métriques des composants du cluster Kubernetes, nous utilisons le chart Helm <code>Kube-prometheus-stack</code>. Il s’agit de la méthode recommandée et du chart le plus populaire au sein de la communauté.</p>
+</div>
+<div class="paragraph">
+<p>Il intègre les composants suivants :</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Prometheus Operator avec un premier Prometheus Server</p>
+</li>
+<li>
+<p>Node Exporters en exécution sur chacun des nœuds qui constituent le cluster</p>
+</li>
+<li>
+<p>Kube State Metrics pour obtenir des métriques sur les ressources Kubernetes</p>
+</li>
+<li>
+<p>Une instance Grafana pour consulter et visualiser les métriques</p>
+</li>
+<li>
+<p>Des tableaux de bord Grafana prédéfinis pour la supervision des composants Kubernetes et des ressources déployées au sein du cluster</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_préparation_au_déploiement_de_prometheus"><a class="anchor" href="#_préparation_au_déploiement_de_prometheus"></a>Préparation au déploiement de Prometheus</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="title">Ajout du dépôt Helm <code>prometheus-community</code> :</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+$ helm repo update</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>On peut afficher la configuration par défault du chart Helm :</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ helm show values prometheus-community/kube-prometheus-stack --version 35.0.3</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_focus_sur_la_configuration"><a class="anchor" href="#_focus_sur_la_configuration"></a>Focus sur la configuration</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="title">Activation de l&#8217;operator Prometheus</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">prometheusOperator:
+  enabled: true
+[...]</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Activation d’une instance Prometheus</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">## Deploy a Prometheus instance
+##
+prometheus:
+
+  enabled: true
+[...]</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Point sur la rétention</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">    ## How long to retain metrics
+    ##
+    retention: 2h
+[...]</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Activation des NodeExporter (sous-chart)</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">## Deploy node exporter as a daemonset to all nodes
+##
+nodeExporter:
+  enabled: true
+[...]</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Désactivation d&#8217;AlertManager</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">alertmanager:
+
+  ## Deploy alertmanager
+  ##
+  enabled: true
+[...]</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Activation de Grafana (sous-chart)</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">grafana:
+  enabled: true
+[...]</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Activation de la dataSource par défault</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">    datasources:
+      enabled: true
+      defaultDatasourceEnabled: true
+[...]</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Grafana adminPassword</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">    enabled: true
+[...]</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_déploiement_de_prometheus"><a class="anchor" href="#_déploiement_de_prometheus"></a>Déploiement de Prometheus</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_cluster_kube_foo"><a class="anchor" href="#_cluster_kube_foo"></a>Cluster <code>kube-foo</code></h3>
+<div class="paragraph">
+<p>On déploie le chart Helm kube-prometheus-stack sur le cluster <code>kube-foo</code> en prenant soin de créer un namespace dédié au préalable :</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ kctx kube-foo</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ kubectl create namespace kube-prometheus-stack
+$ kns kube-prometheus-stack</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+--version 35.0.3 \
+--values src/config/kube-prometheus-stack/custom-values.yaml \
+--set 'alertmanager.ingress.hosts={alertmanager.foo}' \
+--set 'grafana.ingress.hosts={grafana.foo}' \
+--set 'prometheus.ingress.hosts={prometheus.foo}' \
+--set 'prometheus.prometheusSpec.externalLabels.cluster=kube-foo' \
+--set 'prometheus.prometheusSpec.externalLabels.tenant=foo'</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">On peut vérifier que le déploiement Helm s’est bien déroulé.</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ helm list</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>On liste les pods qui ont été créés à la suite du déploiement Helm.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ kubectl get pods -o wide
+NAME READY STATUS RESTARTS AGE
+alertmanager-kube-prometheus-stack-alertmanager-0 2/2 Running 0 4m3s
+kube-prometheus-stack-grafana-df8748bb9-gf2jx 3/3 Running 0 4m6s
+kube-prometheus-stack-kube-state-metrics-d699cc95f-tbg5b 1/1 Running 0 4m6s
+kube-prometheus-stack-operator-b4765c5fb-9qccj 1/1 Running 0 4m6s
+kube-prometheus-stack-prometheus-node-exporter-jfjnt 1/1 Running 0 4m6s
+prometheus-kube-prometheus-stack-prometheus-0 2/2 Running 0 4m3s</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>On note la présence de :</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Grafana</p>
+</li>
+<li>
+<p>kube-state-metrics</p>
+</li>
+<li>
+<p>Prometheus Operator</p>
+</li>
+<li>
+<p>Prometheus Node Exporter</p>
+</li>
+<li>
+<p>une instance Prometheus</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Grafana et Prometheus Web UI sont accessibles en HTTP via les Ingress Kubernetes qu’on peut lister :</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ kubectl get ingress -o wide
+NAME CLASS HOSTS ADDRESS PORTS AGE
+kube-prometheus-stack-alertmanager nginx alertmanager.foo 172.16.101.123 80 31s
+kube-prometheus-stack-grafana nginx grafana.foo 172.16.101.123 80 31s
+kube-prometheus-stack-prometheus nginx prometheus.foo 172.16.101.123 80 31s</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>On modifie notre fichier <code>/etc/hosts</code> pour pointer facilement les WebUI :</p>
+</div>
+<div class="listingblock">
+<div class="title">Ajout au fichier /etc/hosts :</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">## foo
+172.16.101.123 prometheus.foo
+172.16.101.123 alertmanager.foo
+172.16.101.123 grafana.foo</code></pre>
+</div>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<caption class="title">Table 1. Stack supervision du cluster kube-foo</caption>
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Prometheus</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://prometheus.foo" class="bare">http://prometheus.foo</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AlertManager</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://alertmanager.foo" class="bare">http://alertmanager.foo</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Grafana</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://grafana.foo" class="bare">http://grafana.foo</a></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_cluster_kube_hoster_mutu"><a class="anchor" href="#_cluster_kube_hoster_mutu"></a>Cluster <code>kube-hoster-mutu</code></h3>
+<div class="paragraph">
+<p>On effectue la même manipulation sur le cluster <code>kube-hoster-mutu</code> en adaptant la configuration :</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Dans une stratégie de haute disponibilité, on pourra demander 2 instances Prometheus au sein d’un même cluster.
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ kctx kube-hoster-mutu
+$ kubectl create namespace kube-prometheus-stack
+$ kns kube-prometheus-stack
+$ helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+--version 35.0.3 \
+--values src/config/kube-prometheus-stack/custom-values.yaml \
+--set 'alertmanager.ingress.hosts={alertmanager.hoster}' \
+--set 'grafana.ingress.hosts={grafana.hoster}' \
+--set 'prometheus.ingress.hosts={prometheus.hoster}' \
+--set 'prometheus.prometheusSpec.replicas=2' \
+--set 'prometheus.prometheusSpec.externalLabels.cluster=kube-hoster-mutu' \
+--set 'prometheus.prometheusSpec.externalLabels.tenant=hoster'</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ helm list</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ kubectl get pods -o wide
+$ kubectl get ingress -o wide</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>On modifie notre fichier <code>/etc/hosts</code> pour pointer facilement les WebUI :</p>
+</div>
+<div class="listingblock">
+<div class="title">Ajout au fichier /etc/hosts :</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">## hoster
+172.16.102.141 prometheus.hoster
+172.16.102.141 alertmanager.hoster
+172.16.102.141 grafana.hoster</code></pre>
+</div>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<caption class="title">Table 2. Stack supervision du cluster kube-hoster-mutu</caption>
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Prometheus</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://prometheus.hoster" class="bare">http://prometheus.hoster</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AlertManager</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://alertmanager.hoster" class="bare">http://alertmanager.hoster</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Grafana</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://grafana.hoster" class="bare">http://grafana.hoster</a></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_exploration"><a class="anchor" href="#_exploration"></a>Exploration</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="https://prometheus.io/docs/prometheus/latest/querying/basics/" class="bare">https://prometheus.io/docs/prometheus/latest/querying/basics/</a></p>
+</div>
+<div class="sect2">
+<h3 id="_découverte_de_prometheus_ui"><a class="anchor" href="#_découverte_de_prometheus_ui"></a>Découverte de Prometheus UI</h3>
+<div class="paragraph">
+<p>On pointe notre navigateur sur <code><a href="http://prometheus.foo/" class="bare">http://prometheus.foo/</a></code>.</p>
+</div>
+<div class="sect3">
+<h4 id="_status_et_configuration"><a class="anchor" href="#_status_et_configuration"></a>Status et Configuration</h4>
+<div class="paragraph">
+<p>On parcourt les informations disponibles dans le menu <code>Status</code> pour afficher :</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>l’état du stockage : TSDB Status</p>
+</li>
+<li>
+<p>la configuration actuelle du serveur</p>
+</li>
+<li>
+<p>les cibles : Targets</p>
+</li>
+<li>
+<p>les Service Discovery</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_graph"><a class="anchor" href="#_graph"></a>Graph</h4>
+<div class="paragraph">
+<p>On peut chercher à récupérer la métrique <code>up</code> qui va nous permettre d’afficher les /jobs/ et /instances/ de l’instance Prometheus.</p>
+</div>
+<div class="paragraph">
+<p><code>up</code> fait partie d’en ensemble de métriques et labels générés automatiquement par Prometheus :
+* <a href="https://prometheus.io/docs/concepts/jobs_instances/#automatically-generated-labels-and-time-series" class="bare">https://prometheus.io/docs/concepts/jobs_instances/#automatically-generated-labels-and-time-series</a></p>
+</div>
+<div class="paragraph">
+<p>On voit qu’il n’existe pour le moment que les jobs et instances résultant de l’installation par défault du chart Helm <code>kube-prometheus-stack</code>.
+Il n’existe pas encore de job lié au moissonnage des métriques exposées par notre application <code>demo-jres</code> existant sous le nom d’application <code>pif</code> sur ce cluster.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_ajout_du_monitoring_des_applications_demo_jres"><a class="anchor" href="#_ajout_du_monitoring_des_applications_demo_jres"></a>Ajout du monitoring des applications demo-jres</h3>
+<div class="paragraph">
+<p>L’application <code>demo-jres</code> expose des métriques sur un port dédié HTTP TCP/9090.</p>
+</div>
+<div class="paragraph">
+<p>Nous allons tout d’abord vérifier que l’application expose bien ses métriques :</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ kctx kube-foo
+$ kns pif
+$ kubectl get service
+$ kubectl port-forward service/pif-demo-jres-mgmt 9090:9090
+Forwarding from 127.0.0.1:9090 -> 9090
+Forwarding from [::1]:9090 -> 9090</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Depuis un autre terminal :</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ curl http://127.0.0.1:9090
+[...]
+# HELP jres_hello_latency_seconds_created Durée de réponse au Hello JRES
+# TYPE jres_hello_latency_seconds_created gauge
+jres_hello_latency_seconds_created 1.6514239338881242e+09
+# HELP jres_hello_total Compteur du nombre d'affichage d'Hello JRES
+# TYPE jres_hello_total counter
+jres_hello_total{route="/readiness"} 1119.0
+jres_hello_total{route="/liveness"} 1119.0
+jres_hello_total{route="/"} 2.0
+# HELP jres_hello_created Compteur du nombre d'affichage d'Hello JRES
+# TYPE jres_hello_created gauge
+jres_hello_created{route="/readiness"} 1.6514239366589422e+09
+jres_hello_created{route="/liveness"} 1.6514239369945366e+09
+jres_hello_created{route="/"} 1.6514244067198792e+09
+# HELP jres_websites_response_time Jauge du temps de réponse des sites Web JRES en millisecondes
+# TYPE jres_websites_response_time gauge
+jres_websites_response_time{site="https://www.jres.org"} 152.68699999999998
+jres_websites_response_time{site="https://archives.jres.org"} 61.263
+jres_websites_response_time{site="https://conf-ng.jres.org"} 36.977999999999994</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>L’application expose correctement ses métriques.</p>
+</div>
+<div class="paragraph">
+<p>Nous allons à présent ajouter un <code>serviceMonitor</code>, une ressource Kubernetes propre à Prometheus Operator, qui va lui indiquer quel service pointer pour moissonner des métriques ainsi que les labels à prendre en compte.</p>
+</div>
+<div class="paragraph">
+<p>On crée le <code>serviceMonitor</code> dans le namespace de l&#8217;operator <code>kube-prometheus-stack</code> mais on peut le créer n’importe où sur le cluster.</p>
+</div>
+<div class="listingblock">
+<div class="title">ServiceMonitor pour le moissonnage des métriques des instances demo-jres sur le cluster</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: "demo-jres"
+spec:
+  endpoints:
+  - path: /metrics
+  - port: "9090"
+  namespaceSelector:
+    any: true
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: "demo-jres"
+      mgmt: "true"
+  targetLabels:
+    - app
+    - tenant</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Création du serviceMonitor sur le cluster kube-foo</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ kctx kube-foo
+$ kubectl --namespace kube-prometheus-stack apply -f src/config/kube-prometheus-stack/manifests/demo-jres-service-monitor.yaml</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Création du serviceMonitor sur le cluster kube-hoster-mutu</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ kctx kube-hoster-mutu
+$ kubectl --namespace kube-prometheus-stack apply -f src/config/kube-prometheus-stack/manifests/demo-jres-service-monitor.yaml</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Après quelques instants, on voit de nouvelles <code>targets</code> apparaître dans la WebUI Prometheus.</p>
+</div>
+<div class="paragraph">
+<p>On peut également vérifier que les métriques exposées par <code>demo-jres</code> commencent à être moissonnées.</p>
+</div>
+<div class="paragraph">
+<p>On note les labels associés aux différentes métriques.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_mise_en_œuvre_dun_service_discovery"><a class="anchor" href="#_mise_en_œuvre_dun_service_discovery"></a>Mise en œuvre d’un Service Discovery</h3>
+<div class="paragraph">
+<p>On souhaite également récupérer les métriques exposées par la vm <code>vm-foo</code>.</p>
+</div>
+<div class="paragraph">
+<p>Dans le chapitre sur la mise en place, nous avions fait en sorte d’avoir :</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Métriques</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Exporter</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">URL</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Métriques systèmes de la VM</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Node-Exporter</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://172.16.101.69:9100/metrics" class="bare">http://172.16.101.69:9100/metrics</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Métriques Nginx</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">NGINX Prometheus Exporter</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://172.16.101.69:9113/metrics" class="bare">http://172.16.101.69:9113/metrics</a></p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Il nous faut maintenant configurer Prometheus pour moissonner ces cibles.
+On l’a vu, Prometheus propose différentes méthodes pour configurer les services à moissonner. Nous pourrions utiliser une configuration statique, mais nous allons tester la méthode <code>http_sd_config</code> qui consiste à rendre disponible en HTTP un fichier JSON qui liste les services à moissonner à Prometheus.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+Ici nous travaillons avec un fichier JSON statique pour le tutoriel, mais il pourrait être généré automatiquement à partir d’un inventaire ou d’une CMDB par exemple.
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="title">On complète avec un 2ᵉ service</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-json hljs" data-lang="json">[
+  {
+    "targets": [ "172.16.101.69:9100" ],
+    "labels": {
+      "tenant": "foo", "hostname": "vm-foo"
+    }
+  },
+  {
+    "targets": [ "172.16.101.69:9113" ],
+    "labels": {
+      "tenant": "foo", "app": "web"
+    }
+  }
+]</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Nous allons nous servir de l’instance Nginx sur la VM <code>vm-foo</code> pour héberger ce fichier JSON et le rendre ainsi disponible à l’instance Prometheus en exécution sur le cluster <code>kube-foo</code>.</p>
+</div>
+<div class="listingblock">
+<div class="title">Copie de fichiers</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ scp -r src/config/nginx debian@vm-foo:/tmp/
+$ scp -r src/config/kube-prometheus-stack/http_sd_config.json debian@vm-foo:/tmp/</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Rechargement de la configuration</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ ssh debian@vm-foo</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ sudo rm /etc/nginx/sites-enabled/* && sudo cp /tmp/nginx/sites/* /etc/nginx/sites-enabled/
+$ sudo cp /tmp/http_sd_config.json /var/www/sd.json
+$ sudo systemctl reload nginx</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>On teste que le fichier de Service Discovery est bien accessible :</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ curl http://vm-foo:8080</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_configuration_de_prometheus_pour_utilisation_du_service_discovery_mis_en_œuvre"><a class="anchor" href="#_configuration_de_prometheus_pour_utilisation_du_service_discovery_mis_en_œuvre"></a>Configuration de Prometheus pour utilisation du Service Discovery mis en œuvre</h3>
+<div class="paragraph">
+<p>Notre instance Prometheus sur le cluster <code>kube-foo</code> ayant été déployé via le chart Helm <code>kube-prometheus-stack</code> et Prometheus Operator, nous allons nous appuyer sur la directive de configuration <code>additionalScrapeConfigs</code> pour ajouter notre Service Discovery :</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+On utilise l’adresse IP de la VM, car nous ne résolvons pas le nom vm-foo depuis le cluster kube-foo.
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="title">Ajout de notre Service Discovery HTTP en configuration additionnelle de Prometheus</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">prometheus:
+  prometheusSpec:
+    additionalScrapeConfigs:
+    - job_name: foo_http_sd_config
+      http_sd_configs:
+      - url: "http://172.16.101.69:8080"
+        refresh_interval: 30s</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">On applique la configuration via Helm</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ kns kube-prometheus-stack
+$ helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+--version 35.0.3 \
+--values src/config/kube-prometheus-stack/custom-values.yaml \
+--values src/config/kube-prometheus-stack/additionalScrapeConfigs-values.yaml \
+--set 'alertmanager.ingress.hosts={alertmanager.foo}' \
+--set 'grafana.ingress.hosts={grafana.foo}' \
+--set 'prometheus.ingress.hosts={prometheus.foo}' \
+--set 'prometheus.prometheusSpec.externalLabels.cluster=kube-foo' \
+--set 'prometheus.prometheusSpec.externalLabels.tenant=foo'</code></pre>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_vérification_dans_prometheus_ui"><a class="anchor" href="#_vérification_dans_prometheus_ui"></a>Vérification dans Prometheus UI</h4>
+<div class="paragraph">
+<p>Si on retourne dans Prometheus UI, on doit à présent lister notre application parmi les cibles.</p>
+</div>
+<div class="paragraph">
+<p>On demande la métrique <code>up</code> : apparaissent à présent les <code>jobs</code> de notre application <code>web</code> (le serveur Nginx), ainsi que les métriques exposées par le Node Exporter installé sur la VM vm-foo.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_accès_aux_métriques_depuis_grafana"><a class="anchor" href="#_accès_aux_métriques_depuis_grafana"></a>Accès aux métriques depuis Grafana :</h4>
+<div class="paragraph">
+<p>On utilise pour l’instant l’instance Grafana qui a été déployée au sein du cluster via le chart Helm <code>kube-prometheus-stack</code>.</p>
+</div>
+<div class="paragraph">
+<p>On pointe notre navigateur sur : <a href="http://grafana.foo" class="bare">http://grafana.foo</a></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>login : admin</p>
+</li>
+<li>
+<p>passwd : admin</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>On note que l’instance Prometheus du cluster existe déjà en tant que datasource.</p>
+</div>
+<div class="paragraph">
+<p>On peut tester directement la requête des métriques dans le mode Explorer.</p>
+</div>
+<div class="sect4">
+<h5 id="_grafana_explore"><a class="anchor" href="#_grafana_explore"></a>Grafana Explore</h5>
+<div class="paragraph">
+<p>Si on demande la métrique <code>jres_websites_response_time</code>, on la voit s’afficher dans les différentes séries que Prometheus a pu moissonner.</p>
+</div>
+<div class="paragraph">
+<p>Le tableau dans la partie basse affiche en colonne les différents labels, que l’on peut utiliser utiliser pour filtrer et affiner notre requête.</p>
+</div>
+<div class="paragraph">
+<p>On peut fouiller les métriques pour lister toutes celles produites par :</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>les composants Kubernetes</p>
+</li>
+<li>
+<p>l’instance <code>pif</code> de l’application <code>demo-jres</code></p>
+</li>
+<li>
+<p>le node exporter de foo</p>
+</li>
+<li>
+<p>Nginx sur foo</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>On note que l’on récupère uniquement des métriques qui semblent appartenir au tenant <code>foo</code>.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_thanos"><a class="anchor" href="#_thanos"></a>Thanos</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Thanos est une application distribuée pour la centralisation, le stockage longue durée et la recherche sur des grands ensembles de métriques.</p>
+</div>
+<div class="paragraph">
+<p>Thanos Architecture : <a href="https://thanos.io/tip/thanos/design.md/" class="bare">https://thanos.io/tip/thanos/design.md/</a></p>
+</div>
+<div class="paragraph">
+<p>Il est conçu pour exposer la même API que Prometheus et s’intégrer parfaitement dans son écosystème.</p>
+</div>
+<div class="paragraph">
+<p>Un point fort incontournable de Thanos, il peut se satisfaire d’un stockage objet pour stocker les blocs de données et aussi les index.
+Il n’a pas d’autre dépendance externe, comme une base de données par exemple.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="_images/thanos-architecture.png" alt="Architecture distribuée de Thanos">
+</div>
+<div class="title">Figure 1. Architecture distribuée de Thanos</div>
+</div>
+<div class="paragraph">
+<p>Il s’articule autour de plusieurs composants qui sont tous exécutables depuis le même binaire sans dépendance externe.</p>
+</div>
+<div class="sect2">
+<h3 id="_thanos_sidecar"><a class="anchor" href="#_thanos_sidecar"></a>Thanos Sidecar</h3>
+<div class="paragraph">
+<p>Il s’exécute au plus prêt d’une instance Prometheus pour avoir accès aux blocs de données qu’il produit afin de les externaliser sur un stockage objet cible.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_thanos_store_gateway"><a class="anchor" href="#_thanos_store_gateway"></a>Thanos Store Gateway</h3>
+<div class="paragraph">
+<p>Thanos Store Gateway ou Thanos Storage se branche à un stockage objet et expose l’API Store que peut consommer Thanos Query.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_thanos_query"><a class="anchor" href="#_thanos_query"></a>Thanos Query</h3>
+<div class="paragraph">
+<p>Thanos Query est là pour prendre les requêtes PromQL en entrée et les trassmettre auprès de backends pour lequel il est configuré.</p>
+</div>
+<div class="paragraph">
+<p>Il peut ainsi agréger en retour des données provenant de différents stockages :</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Prometheus, via le composant Thanos Sidecar</p>
+</li>
+<li>
+<p>Stockage Objet, via le composant Thanos Storage</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_thanos_query_frontend"><a class="anchor" href="#_thanos_query_frontend"></a>Thanos Query Frontend</h3>
+<div class="paragraph">
+<p>Ce composant est un proxy que l&#8217;on peut mettre devant Thanos Query pour optimiser le traitement des requêtes qui sont faites au système.</p>
+</div>
+<div class="paragraph">
+<p>Il peut faire :</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>du Splitting: découper les requêtes pour réduire les risques d&#8217;OOM, paralléliser et réduire le temps de requête</p>
+</li>
+<li>
+<p>du Retry sur erreur HTTP</p>
+</li>
+<li>
+<p>du Caching, in-memory ou sur des systèmes externes : memcached, redis</p>
+</li>
+<li>
+<p>Slow Query Log</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_thanos_compactor"><a class="anchor" href="#_thanos_compactor"></a>Thanos Compactor</h3>
+<div class="paragraph">
+<p>Compactor permet de gérer la politique de stockage long terme, au travers de différentes techniques qu’il applique aux données sur le stockage objet :</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Compaction, vertical compaction</p>
+</li>
+<li>
+<p>Retention</p>
+</li>
+<li>
+<p>Downsampling</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_déploiement_de_thanos_sidecar_sur_les_prometheus"><a class="anchor" href="#_déploiement_de_thanos_sidecar_sur_les_prometheus"></a>Déploiement de Thanos SideCar sur les Prometheus</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_focus_sur_la_configuration_de_thanos_sidecar"><a class="anchor" href="#_focus_sur_la_configuration_de_thanos_sidecar"></a>Focus sur la configuration de Thanos Sidecar</h3>
+<div class="listingblock">
+<div class="title">Configuration de l&#8217;external storage</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">    ## to the configurations generated by the Prometheus Operator. Alert relabel configurations specified must have the form as specified in the
+    ## official Prometheus documentation: https://prometheus.io/docs/prometheus/latest/configuration/configuration/#alert_relabel_configs.
+    ## As alert relabel configs are appended, the user is responsible to make sure it is valid. Note that using this feature may expose the
+    ## possibility to break upgrades of Prometheus. It is advised to review Prometheus release notes to ensure that no incompatible alert relabel
+    ## configs are going to break Prometheus after the upgrade.
+    ##
+    additionalAlertRelabelConfigs: []
+    # - separator: ;
+    #   regex: prometheus_replica
+[...]</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Aperçu de la configuration du stockage objet</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">type: S3
+config:
+  endpoint: '172.16.102.113:9000'
+  insecure: true
+  bucket: metrics
+  access_key: tuto
+  secret_key: tutojres
+[...]</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_déploiement_de_thanos_sidecar"><a class="anchor" href="#_déploiement_de_thanos_sidecar"></a>Déploiement de Thanos Sidecar</h3>
+<div class="sect3">
+<h4 id="_cluster_kube_foo_2"><a class="anchor" href="#_cluster_kube_foo_2"></a>Cluster <code>kube-foo</code></h4>
+<div class="listingblock">
+<div class="title">Création du secret objstore-config pour Thanos</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ kctx kube-foo
+$ kubectl --namespace kube-prometheus-stack create secret generic objstore-config \
+--from-file=src/config/kube-prometheus-stack/objstore.yaml</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Déploiement de Prometheus avec Thanos Sidecar</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+--version 35.0.3 \
+--values src/config/kube-prometheus-stack/custom-values-thanos.yaml \
+--values src/config/kube-prometheus-stack/additionalScrapeConfigs-values.yaml \
+--set 'alertmanager.ingress.hosts={alertmanager.foo}' \
+--set 'grafana.ingress.hosts={grafana.foo}' \
+--set 'prometheus.ingress.hosts={prometheus.foo}' \
+--set 'prometheus.prometheusSpec.externalLabels.cluster=kube-foo' \
+--set 'prometheus.prometheusSpec.externalLabels.tenant=foo'</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_cluster_kube_hoster_mutu_2"><a class="anchor" href="#_cluster_kube_hoster_mutu_2"></a>Cluster <code>kube-hoster-mutu</code></h4>
+<div class="listingblock">
+<div class="title">Création du secret objstore-config pour Thanos</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ kubie ctx kube-hoster-mutu
+$ kubectl --namespace kube-prometheus-stack create secret generic objstore-config \
+--from-file=src/config/kube-prometheus-stack/objstore.yaml</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Contrairement au cluster <code>kube-foo</code>, on ne positionne pas d&#8217;externalLabels <code>tenant</code> pour ne pas réécrire le label qui peut déjà éxister au niveau des ressources du cluster
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="title">Déploiement de Prometheus avec Thanos</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+--version 35.0.3 \
+--namespace kube-prometheus-stack \
+--values src/config/kube-prometheus-stack/custom-values-thanos.yaml \
+--set 'alertmanager.ingress.hosts={alertmanager.hoster}' \
+--set 'grafana.ingress.hosts={grafana.hoster}' \
+--set 'prometheus.ingress.hosts={prometheus.hoster}' \
+--set 'prometheus.prometheusSpec.replicas=2' \
+--set 'prometheus.prometheusSpec.externalLabels.cluster=kube-hoster-mutu'</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_thanos_query_2"><a class="anchor" href="#_thanos_query_2"></a>Thanos Query</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Depuis une session SSH :</p>
+</div>
+<div class="listingblock">
+<div class="title">Installation de Thanos</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ wget -L https://github.com/thanos-io/thanos/releases/download/v0.25.2/thanos-0.25.2.linux-amd64.tar.gz
+$ tar -zxf thanos-0.25.2.linux-amd64.tar.gz
+$ sudo sudo cp thanos-0.25.2.linux-amd64/thanos /usr/local/bin/
+$ thanos --version</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>On lance Thanos Query, configuré pour être en écoute en HTTP sur le port 9090 et qui pointe sur les instances Thanos Sidecar déployées à côté des Prometheus sur les 2 clusters Kubernetes.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ thanos query \
+--http-address=0.0.0.0:9070 \
+--query.replica-label=prometheus_replica \
+--store=172.16.101.123:30901 \
+--store=172.16.102.141:30901</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Dans les logs on doit voir que le Query se connecte aux 2 endpoints et détecte les externalLabels que l’on a définis plus tôt au niveau des Sidecar.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+Service Discovery DNS
+On peut multiplier le nombre d&#8217;endpoint, mais on peut aussi pointer un nom DNS (DNS A ou DNS SRV) qui cible plusieurs cibles.
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="title">Exemple avec DNS SRV</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">_thanosstores._tcp.hoster IN SRV 0 0 30901 thanosstore.kube-foo.foo.
+_thanosstores._tcp.hoster IN SRV 0 0 30901 thanosstore.kube-hoster-mutu.hoster.</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Exemple avec DNS SRV</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ thanos query
+--log.format=json \
+--http-address=0.0.0.0:9070 \
+--query.replica-label=prometheus_replica \
+--store=dnssrv+_thanosstores._tcp.hoster</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Dans le cadre du tutoriel, n’ayant pas mis en œuvre une infrastructure DNS, nous resterons avec une configuration statique.</p>
+</div>
+<div class="sect2">
+<h3 id="_test_du_thanos_query"><a class="anchor" href="#_test_du_thanos_query"></a>Test du Thanos Query</h3>
+<div class="paragraph">
+<p>Connexion à l’interface Web du Thanos Query : <a href="http://vm-hoster:9070" class="bare">http://vm-hoster:9070</a></p>
+</div>
+<div class="paragraph">
+<p>L’interface est quasi identique à celle de Prometheus WebUI, mais elle va nous permettre d’avoir une vue consolidée de nos 2 Prometheus.</p>
+</div>
+<div class="paragraph">
+<p>Un nouvel onglet apparaît, celui des Stores.</p>
+</div>
+<div class="paragraph">
+<p>On y voit les 2 stores actuellement configurés qui correspondent aux Prometheus+Sidecar présents sur chacun des clusters.
+Nous pouvons donc interroger toutes ces métriques.</p>
+</div>
+<div class="paragraph">
+<p>Cependant, nous n’avons accès qu’aux métriques récentes qui sont encore accessibles localement par Prometheus.
+Les métriques stockées dans des blocs déjà externalisés sur le stockage objet ne sont pas encore accessibles.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_thanos_store"><a class="anchor" href="#_thanos_store"></a>Thanos Store</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>L’instance Thanos Query précédemment lancée est configurée pour interroger les stores que sont les instances Prometheus+Thanos Sidecar. Or, celles-ci ont une rétention faible et ne sont pas forcément résilientes. On a vu précédemment que Thanos Sidecar va périodiquement pousser sur S3 les blocs de stockage de métriques.</p>
+</div>
+<div class="paragraph">
+<p>Nous allons donc lancer une instance Thanos Store configurée pour accéder aux données poussées dans S3 par les Thanos SideCar :</p>
+</div>
+<div class="listingblock">
+<div class="title">On crée le fichier objstore.yaml sur la VM vm-hoster :</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">type: S3
+config:
+  endpoint: '172.16.102.113:9000'
+  insecure: true
+  bucket: metrics
+  access_key: tuto
+  secret_key: tutojres</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ thanos store \
+--http-address="0.0.0.0:11902" \
+--grpc-address="127.0.0.1:11901" \
+--data-dir="thanos-store/store" \
+--objstore.config-file="objstore.yaml"</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>On relance Thanos Query avec ce store comme endpoint supplémentaire :</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ thanos query \
+--http-address="0.0.0.0:9070" \
+--query.replica-label=prometheus_replica \
+--store=172.16.101.123:30901 \
+--store=172.16.102.141:30901 \
+--store="127.0.0.1:11901"</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>On vérifie via le Thanos UI, les <code>stores</code> et les <code>targets</code>.</p>
+</div>
+<div class="paragraph">
+<p>Dans la partie Graph, en passant une requête sur une métrique et via l&#8217;option <code>Enable Store Filtering</code>, on peut identifier de quel Store proviennent les métriques affichées .</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ thanos tools bucket web \
+--objstore.config-file=objstore.yaml</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_optimisations_et_mise_à_léchelle"><a class="anchor" href="#_optimisations_et_mise_à_léchelle"></a>Optimisations et mise à l’échelle</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Thanos est conçu pour supporter une mise à l’échelle importante. Tous les composants cités plus tôt peuvent être multipliés pour absorber plus de requêtes sur plus de données provenant de plus de sources.</p>
+</div>
+<div class="sect2">
+<h3 id="_thanos_query_frontend_2"><a class="anchor" href="#_thanos_query_frontend_2"></a>Thanos Query Frontend</h3>
+<div class="paragraph">
+<p>Thanos permet également d’ajouter des composants qui pourraient optimiser les performances et distribuer la charge induite par les requêtes passées au système.
+Le traitement des requêtes peut par exemple passer par le Query Frontend pour bénéficier de mécanismes :</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Splitting : par défault, sous-requêtes sur des tranches de 24h</p>
+</li>
+<li>
+<p>Caching : inMemory, Memcached, Redis</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Il se comporte comme un proxy que l’on va positionner devant le Thanos Query déjà démarré :</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">thanos query-frontend \
+--http-address="0.0.0.0:9080" \
+--query-frontend.downstream-url="http://127.0.0.1:9070"</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>On peut pointer notre navigateur à l’adresse <a href="http://vm-hoster:9080" class="bare">http://vm-hoster:9080</a> pour vérification.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_utilisation_dans_grafana"><a class="anchor" href="#_utilisation_dans_grafana"></a>Utilisation dans Grafana</h3>
+<div class="paragraph">
+<p>Nous allons utiliser cette fois une autre instance de Grafana, que nous allons démarrer directement depuis notre poste de travail.</p>
+</div>
+<div class="listingblock">
+<div class="title">On lance un conteneur Docker à partir de l’image officielle de Grafana</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ docker run --name=grafana \
+--env GF_DASHBOARDS_MIN_REFRESH_INTERVAL=1s \
+--network host \
+--detach \
+grafana/grafana</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>On utilise <code>--network host</code> pour profiter de nos modifications dans <code>/etc/hosts</code>.</p>
+</div>
+<div class="paragraph">
+<p>On pointe notre navigateur à l’adresse : <a href="http://localhost:3000" class="bare">http://localhost:3000</a></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>login : admin</p>
+</li>
+<li>
+<p>passwd : admin</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<div class="title">Ajout de Thanos en datasource</div>
+<p>Dans la partie Configuration, nous allons ajouter une nouvelle datasource :</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Comme Thanos est 100 % compatible avec les API Prometheus, on choisit le type <code>Prometheus</code></p>
+</li>
+<li>
+<p>On lui donne le nom de <code>Thanos - Query Frontend</code></p>
+</li>
+<li>
+<p>URL : <a href="http://vm-hoster:9080" class="bare">http://vm-hoster:9080</a></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>On valide avec le bouton <code>Save &amp; test</code> en laissant les autres options aux valeurs par défault, et on peut accéder directement au menu Explorer depuis le bouton.</p>
+</div>
+<div class="paragraph">
+<div class="title">Explorer</div>
+<p>On reprend une recherche sur notre métrique custom <code>jres_websites_response_time</code>.
+Cette fois on doit afficher la métrique de toutes les instances de l’application <code>demo-jres</code> et pour tous les tenants clients existants dans notre infrastructure : <code>foo</code> et <code>bar</code>.</p>
+</div>
+<div class="paragraph">
+<p>Si on choisit une autre métrique, par exemple <code>node_cpu_seconds_total</code>, on verra aussi apparaître des séries appartenant au tenant <code>hoster</code>.</p>
+</div>
+<div class="paragraph">
+<p>En attendant plus de 2 h, la durée de rétention minimale sur Prometheus, les métriques plus anciennes proviendront du Thanos Storage.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_multi_tenant"><a class="anchor" href="#_multi_tenant"></a>Multi-tenant</h3>
+<div class="paragraph">
+<p>On a vu que Thanos stockait toutes les métriques provenant d’applications et d’infrastructures appartenant à différents tenants : <code>foo</code>, <code>{tenant-client2</code>, <code>hoster</code>. Néanmoins, pour le moment, toutes les métriques sont stockées dans le même stockage et les requêtes passées au Thanos Query (ou Query Frontend) permettent de récupérer les métriques de n’importe quel tenant.</p>
+</div>
+<div class="paragraph">
+<p>Afin de filtrer les accès et de n’autoriser l’accès à un tenant qu’à ses propres métriques, nous allons ajouter un proxy PromQL sur le chemin de la requête. Il sera configuré pour refuser toute requête qui ne précise pas de valeur pour le label tenant configuré.
+Grafana, par sa gestion des droits et via les mécanismes d’organisation et d’utilisateurs, et en distinguant une datasource par tenant, peut nous permettre de correctement gérer les autorisations et ainsi limiter l’accès aux métriques du même tenant.</p>
+</div>
+<div class="paragraph">
+<p>Pour obliger l’utilisation du label tenant, on peut utiliser <code>prom-label-proxy</code> : <a href="https://github.com/prometheus-community/prom-label-proxy" class="bare">https://github.com/prometheus-community/prom-label-proxy</a></p>
+</div>
+<div class="listingblock">
+<div class="title">On installe prom-label-proxy</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ curl -O -L "https://github.com/prometheus-community/prom-label-proxy/releases/download/v0.4.0/prom-label-proxy-0.4.0.linux-amd64.tar.gz"
+$ tar zxvf prom-label-proxy-0.4.0.linux-amd64.tar.gz
+$ sudo cp prom-label-proxy-0.4.0.linux-amd64/prom-label-proxy /usr/local/bin/
+$ rm -fr prom-label-proxy-0.4.0.linux-amd64
+$ prom-label-proxy --help</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ prom-label-proxy -label tenant \
+-insecure-listen-address 0.0.0.0:9090 \
+-upstream http://127.0.0.1:9080</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Si on retourne dans Grafana, on ajoute une nouvelle datasource :</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Type <code>Prometheus</code></p>
+</li>
+<li>
+<p>On lui donne le nom de <code>Thanos - via Prom-label-proxy</code></p>
+</li>
+<li>
+<p>URL : <a href="http://vm-hoster:9090" class="bare">http://vm-hoster:9090</a></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>En voulant sauvegarder cette datasource, on obtient un message d’erreur : Prom-label-proxy refuse la requête de Grafana et demande à ce que le label <code>tenant</code> soit positionné dans toutes les requêtes qui lui sont faites.</p>
+</div>
+<div class="paragraph">
+<p>Dans la page de configuration de la ressource, dans la partie <code>Misc</code>, on va forcer la valeur du label <code>tenant</code></p>
+</div>
+<div class="paragraph">
+<p>Dans <code>Custom query parameters</code>, on positionne : <code>tenant=foo</code>.</p>
+</div>
+<div class="paragraph">
+<p>Et on renomme la datasource : <code>Thanos - Tenant Foo</code></p>
+</div>
+<div class="paragraph">
+<p>On fait la même chose pour le tenant <code>bar</code></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Type <code>Prometheus</code></p>
+</li>
+<li>
+<p>On lui donne le nom de <code>Thanos - Tenant Bar</code></p>
+</li>
+<li>
+<p>URL : <a href="http://vm-hoster:9090" class="bare">http://vm-hoster:9090</a></p>
+</li>
+<li>
+<p>Custom query parameters` : <code>tenant=foo</code></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Dans le mode explore, sélectionner la datasource <code>Thanos - Tenant Foo</code>, lancer une requête sur la métrique <code>jres_hello_total</code> par exemple.
+Seules les métriques de <code>foo</code> doivent alors s’afficher.</p>
+</div>
+<div class="paragraph">
+<p>Tester la même chose sur la datasource <code>Thanos - Tenant Bar</code>.</p>
+</div>
+<div class="paragraph">
+<p>Nous pourrions finaliser en configurant Grafana pour authentifier les utilisateurs des organisations <code>foo</code> et <code>bar</code> et les restreindre à leur datasource respective.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_extra"><a class="anchor" href="#_extra"></a>Extra</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_thanos_compactor_2"><a class="anchor" href="#_thanos_compactor_2"></a>Thanos Compactor</h3>
+<div class="paragraph">
+<p>Thanos offre plusieurs mécanismes pour la gestion du cycle de vie des données dans le stockage objet :</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Compaction/Déduplication : si un métrique existe sous plusieurs réplicas (Prometheus en haute dispo en amont par exemple), il n’est pas nécessaire de conserver les mesures en double.</p>
+</li>
+<li>
+<p>Rétention : On peut ici gérer la durée de retention des métriques</p>
+</li>
+<li>
+<p>Downsampling : Cette fonctionnalité permet de baisser la fréquence d’échantillonnage des métriques stockées afin de gagner en volumétrie de stockage.</p>
+</li>
+<li>
+<p>Nettoyage des uploads partiels : Dans le cas où Thanos Sidecar ne parvient pas à externaliser correctement les blocs, ceux-ci seront supprimés du stockage objet.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>On peut observer la volumétrie initiale du bucket <code>metrics</code> avant une première compaction dans la console Minio.</p>
+</div>
+<div class="paragraph">
+<p>On lance Thanos Compactor :</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ thanos compact \
+--http-address="0.0.0.0:19191" \
+--data-dir="thanos-store/store" \
+--objstore.config-file="objstore.yaml"</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>On peut retourner dans le Bucket Web pour afficher l&#8217;état des blocs après passage du compactor. On voit que des blocks ont été compressés.</p>
+</div>
+<div class="paragraph">
+<p>Si on affiche le volume de données du bucket <code>metrics</code> dans la console Minio, on note une diminution suite au passage du Compactor.</p>
+</div>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>This page was built using the Antora default UI.</p>
+  <p>The source code for this UI is licensed under the terms of the MPL-2.0 license.</p>
+</footer>
+<script src="./_/js/site.js"></script>
+<script async src="./_/js/vendor/highlight.js"></script>
+  </body>
+</html>

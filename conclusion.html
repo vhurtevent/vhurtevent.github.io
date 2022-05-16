@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Untitled :: [ALERT] SUPERVISION IS DOWN, OBSERVABILITY IS UP</title>
+    <link rel="canonical" href="https://vhurtevent.github.io/conclusion.html">
+    <meta name="generator" content="Antora 3.0.0">
+    <link rel="stylesheet" href="./_/css/site.css">
+    <link rel="stylesheet" href="./_/css/extra.css">    <script>var uiRootPath = './_'</script>
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://vhurtevent.github.io">[ALERT] SUPERVISION IS DOWN, OBSERVABILITY IS UP</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="https://www.github.com/vhurtevent/jres2022-tuto-obs">Github</a>
+        <a class="navbar-item" href="https://hub.docker.com/u/vhurtevent">Docker</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="ROOT" data-version="master">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="introduction.html">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="prerequis.html">Pré-requis</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="mise-en-place.html">Mise en place</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="stockage-objet.html">Stockage Objet (S3)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="metriques.html">Centralisation et consultation des métriques avec Thanos</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="journaux.html">Centralisation et consultation des journaux avec Loki</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="bibliographie.html">Bilbiographie &amp; Liens</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+</nav>
+  <div class="edit-this-page"><a href="file:///home/vincent/workspace/pcscol/ops/jres2022/docs/modules/ROOT/pages/conclusion.adoc">Edit this Page</a></div>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="5">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<div class="sect1">
+<h2 id="_visualiser_des_notes_de_1_à_5_via_jres_hello_total"><a class="anchor" href="#_visualiser_des_notes_de_1_à_5_via_jres_hello_total"></a>Visualiser des notes de 1 à 5 via jres_hello_total</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>&#8594; Métriques en live sur la datasource Thanos/Foo</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_afficher_des_questions_via_les_logs_de_lapp_nginxjres"><a class="anchor" href="#_afficher_des_questions_via_les_logs_de_lapp_nginxjres"></a>Afficher des questions via les logs de l&#8217;app nginx/jres</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Les deux s&#8217;affichent en temps réel dans un dashboard Grafana</p>
+</div>
+<div class="paragraph">
+<p>echo "
+log_format json_combined escape=json
+  '{'
+    '"time_local":"$time_local",'
+    '"remote_addr":"$remote_addr",'
+    '"remote_user":"$remote_user",'
+    '"question":"$request_uri",'
+    '"status": "$status",'
+    '"body_bytes_sent":"$body_bytes_sent",'
+    '"request_time":"$request_time",'
+    '"http_referrer":"$http_referer",'
+    '"http_user_agent":"$http_user_agent"'
+  '}';
+" | sudo tee /etc/nginx/conf.d/json-combined.conf</p>
+</div>
+<div class="paragraph">
+<p>sudo vi /etc/nginx/sites-enabled/jres</p>
+</div>
+<div class="listingblock">
+<div class="title">On ajoute <code>json_combined</code> à la directive <code>access_log</code> pour utiliser le format JSON</div>
+<div class="content">
+<pre>access_log /var/log/nginx/access-jres.log json_combined;</pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">On applique la nouvelle configuration</div>
+<div class="content">
+<pre>sudo systemctl reload nginx</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>logcli query '{app="jres"} | json | line_format "{{.question}}"'  --org-id="foo" --tail --no-labels --since=1m</p>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>This page was built using the Antora default UI.</p>
+  <p>The source code for this UI is licensed under the terms of the MPL-2.0 license.</p>
+</footer>
+<script src="./_/js/site.js"></script>
+<script async src="./_/js/vendor/highlight.js"></script>
+  </body>
+</html>

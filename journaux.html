@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Centralisation des journaux :: [ALERT] SUPERVISION IS DOWN, OBSERVABILITY IS UP</title>
+    <link rel="canonical" href="https://vhurtevent.github.io/journaux.html">
+    <meta name="generator" content="Antora 3.0.0">
+    <link rel="stylesheet" href="./_/css/site.css">
+    <link rel="stylesheet" href="./_/css/extra.css">    <script>var uiRootPath = './_'</script>
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://vhurtevent.github.io">[ALERT] SUPERVISION IS DOWN, OBSERVABILITY IS UP</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="https://www.github.com/vhurtevent/jres2022-tuto-obs">Github</a>
+        <a class="navbar-item" href="https://hub.docker.com/u/vhurtevent">Docker</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="ROOT" data-version="master">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="introduction.html">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="prerequis.html">Pré-requis</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="mise-en-place.html">Mise en place</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="stockage-objet.html">Stockage Objet (S3)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="metriques.html">Centralisation et consultation des métriques avec Thanos</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="journaux.html">Centralisation et consultation des journaux avec Loki</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="bibliographie.html">Bilbiographie &amp; Liens</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="introduction.html">[ALERT] SUPERVISION IS DOWN, OBSERVABILITY IS UP</a></li>
+    <li><a href="journaux.html">Centralisation et consultation des journaux avec Loki</a></li>
+  </ul>
+</nav>
+  <div class="edit-this-page"><a href="file:///home/vincent/workspace/pcscol/ops/jres2022/docs/modules/ROOT/pages/journaux.adoc">Edit this Page</a></div>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="5">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Centralisation des journaux</h1>
+<div class="sect1">
+<h2 id="_présentation_de_la_stack_promtailloki"><a class="anchor" href="#_présentation_de_la_stack_promtailloki"></a>Présentation de la stack Promtail/Loki</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>L’architecture de Loki est largement inspirée de Cortex et Thanos.</p>
+</div>
+<div class="paragraph">
+<p><a href="https://grafana.com/docs/loki/latest/fundamentals/architecture/" class="bare">https://grafana.com/docs/loki/latest/fundamentals/architecture/</a></p>
+</div>
+<div class="paragraph">
+<p>Depuis Loki v2.0, un stockage objet peut suffire, à la fois pour les blocks et les index. Grâce à boltdb-shipper, on peut se passer d&#8217;une base de données de type NoSQL, auparavant nécessaire.</p>
+</div>
+<div class="paragraph">
+<p>Documentation de boltdb-shipper : <a href="https://grafana.com/docs/loki/latest/operations/storage/boltdb-shipper/" class="bare">https://grafana.com/docs/loki/latest/operations/storage/boltdb-shipper/</a></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_où_sont_produits_les_journaux"><a class="anchor" href="#_où_sont_produits_les_journaux"></a>Où sont produits les journaux</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>L’infrastructure déployée produit déjà beaucoup de journaux :</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Les composants Kubernetes pour le compte des tenants <code>foo</code> et <code>hoster</code> : API Server, Etcd, Kubeletc, etc</p>
+</li>
+<li>
+<p>Les instance de l’application <code>demo-jres</code> pour le compte des tenants <code>foo</code> et <code>bar</code></p>
+</li>
+<li>
+<p>La VM vm-foo et Nginx qui tourne dessus</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Nous allons faire en sorte de respecter les mêmes labels que pour les métriques.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="_images/logs-ou-sont-ils.png" alt="Les producteurs de journaux">
+</div>
+<div class="title">Figure 1. Les producteurs de journaux</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="_images/logs-full-labels.png" alt="Les journaux et leurs labels">
+</div>
+<div class="title">Figure 2. Les journaux et leurs labels</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_installation_de_loki"><a class="anchor" href="#_installation_de_loki"></a>Installation de Loki</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Nous allons commencer par démarrer Loki sur la <code>vm-hoster</code>.</p>
+</div>
+<div class="paragraph">
+<p>Loki se présente sous la forme d’un binaire unique mais qui peut être démarré pour différents rôles.
+Il est possible de démarrer Loki sous une forme monolithique avec toutes les fonctionnalités nécessaire, ou bien de choisir une architecture distribuée et capable d’une mise à l’échelle horizontale.</p>
+</div>
+<div class="paragraph">
+<p>Grafana distingue 3 modes de déploiement de Loki : <a href="https://grafana.com/docs/loki/latest/fundamentals/architecture/deployment-modes" class="bare">https://grafana.com/docs/loki/latest/fundamentals/architecture/deployment-modes</a></p>
+</div>
+<div class="paragraph">
+<p>Pour les besoins du tutoriel, le mode monolithique suffit largement.
+Grafana donne également quelques éléments pour dimensionner sa plateforme :</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Monolithique : exécution unique du binaire Loki qui exécute tous les services, pour un volume inférieur à quelques centaines de Go par jour</p>
+</li>
+<li>
+<p>Mise à l’échelle simple : on distingue les flux d’écriture et de lecture, en multipliant si besoin ces blocs services, pour un volume jusqu’à quelques To par jour</p>
+</li>
+<li>
+<p>Mode micro service : chaque service de Loki est un process distinct pouvant être multiplié à l&#8217;envi, supérieur à quelques To par jour</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="title">Installation de Loki sur vm-hoster</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ curl -O -L "https://github.com/grafana/loki/releases/download/v2.5.0/loki-linux-amd64.zip"
+$ unzip "loki-linux-amd64.zip" && rm "loki-linux-amd64.zip"
+$ sudo mv loki-linux-amd64 "/usr/local/bin/loki"
+$ sudo chmod a+x "/usr/local/bin/loki"
+$ loki --version</code></pre>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_détail_de_la_configuration"><a class="anchor" href="#_détail_de_la_configuration"></a>Détail de la configuration</h3>
+<div class="listingblock">
+<div class="title">L&#8217;authentification et la prise en charge du multi-tenant sont pour l&#8217;instant désactivés</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">auth_enabled: false
+[...]</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Configuration de l&#8217;external storage</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">schema_config:
+  configs:
+  - from: "2020-05-15"
+    store: "boltdb-shipper"
+    object_store: "s3"
+    schema: "v11"
+    index:
+      prefix: "index_"
+      period: "24h"
+
+storage_config:
+  boltdb_shipper:
+    active_index_directory: "/tmp/loki/index"
+    cache_location: "/tmp/loki/index_cache"
+    shared_store: "s3"
+  aws:
+    endpoint: "172.16.102.113:9000"
+    bucketnames: "logs"
+    access_key_id: "tuto"
+    secret_access_key: "tutojres"
+[...]</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Copie du fichier de configuration de Loki sur vm-hoster</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ scp src/config/loki/loki-config.yaml debian@vm-hoster:~/</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Démarrage de Loki sur vm-hoster</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ loki -config.file=loki-config.yaml</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_vérifications"><a class="anchor" href="#_vérifications"></a>Vérifications</h3>
+
+</div>
+<div class="sect2">
+<h3 id="_tests_de_laccès_à_loki"><a class="anchor" href="#_tests_de_laccès_à_loki"></a>Tests de l’accès à Loki</h3>
+<div class="paragraph">
+<p>Il est possible via une simple requête HTTP de vérifier si Loki est prêt à ingérer des logs fournis par des agents de collecte.</p>
+</div>
+<div class="listingblock">
+<div class="title">Depuis le poste de travail</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ curl http://vm-hoster:3100/ready
+Ingester not ready: waiting for 15s after being ready</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Après quelques secondes :</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ curl http://vm-hoster:3100/ready
+ready</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_collecteur_de_journaux_promtail"><a class="anchor" href="#_collecteur_de_journaux_promtail"></a>Collecteur de journaux : Promtail</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Loki étant prêt, on peut commencer à déployer les agents Promtail.</p>
+</div>
+<div class="sect2">
+<h3 id="_déploiement_de_promtail"><a class="anchor" href="#_déploiement_de_promtail"></a>Déploiement de Promtail</h3>
+<div class="sect3">
+<h4 id="_détail_de_la_configuration_et_installation"><a class="anchor" href="#_détail_de_la_configuration_et_installation"></a>Détail de la configuration et installation</h4>
+<div class="paragraph">
+<p>Bien que Promtail ait des fonctionnalités avancées comme des pipelines de traitement permettant de transformer les journaux avant envoi à Loki, nous restons sur une configuration minimale qui consiste à ajouter des labels supplémentaires <code>external labels`</code> aux entrées de journaux avant export vers Loki.
+On pourrait par exemple extraire une information particulière d&#8217;une ligne de log pour la positionner en tant que label.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_machine_virtuelle_vm_foo"><a class="anchor" href="#_machine_virtuelle_vm_foo"></a>Machine virtuelle <code>vm-foo</code></h4>
+<div class="paragraph">
+<p>Comme tout composant de la solution Loki, Promtail est un exécutable unique sans dépendance externe.</p>
+</div>
+<div class="listingblock">
+<div class="title">Configuration de Promtail sur la VM pour externalisation des logs du système et des logs du serveur Nginx</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">server:
+  log_level: "info"
+  http_listen_port: 3101
+
+client:
+  url: "http://172.16.102.113:3100/loki/api/v1/push"
+  external_labels:
+    hostname: "vm-foo"
+    dc: "dc-1"
+    tenant: "foo"
+
+positions:
+  filename: "/tmp/promtail/positions.yaml"
+
+scrape_configs:
+  - job_name: "system"
+    static_configs:
+      - targets:
+          - "localhost"
+        labels:
+          __path__: "/var/log/*log"
+
+  - job_name: "nginx"
+    static_configs:
+      - targets:
+          - "localhost"
+        labels:
+          app: "web"
+          __path__: "/var/log/nginx/access-web.log"
+      - targets:
+          - "localhost"
+        labels:
+          app: "metrics"
+          __path__: "/var/log/nginx/access-metrics.log"
+      - targets:
+          - "localhost"
+        labels:
+          app: "sd"
+          __path__: "/var/log/nginx/access-sd.log"</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Copie du fichier de configuration :</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ scp src/config/promtail/vm-foo-promtail-config.yaml debian@vm-foo:~/
+$ ssh debian@vm-foo</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Installation de Promtail :</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ curl -O -L "https://github.com/grafana/loki/releases/download/v2.5.0/promtail-linux-amd64.zip"
+$ unzip "promtail-linux-amd64.zip" && rm "promtail-linux-amd64.zip"
+$ sudo mv promtail-linux-amd64 "/usr/local/bin/promtail"
+$ sudo chmod a+x "/usr/local/bin/promtail"
+$ promtail --version</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">On démarre Promtail :</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ sudo promtail -config.file vm-foo-promtail-config.yaml</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_clusters"><a class="anchor" href="#_clusters"></a>Clusters</h4>
+<div class="paragraph">
+<p>Pour l’installation sur les clusters Kubernetes, on choisit la solution la plus simple : l’utilisation du chart Helm maintenu par Grafana : <a href="https://github.com/grafana/helm-charts/tree/main/charts/promtail" class="bare">https://github.com/grafana/helm-charts/tree/main/charts/promtail</a></p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+On utlise ici la version 3.11.0 du chart Promtail, car la dernière release v4.2.0 présente une regression : <a href="https://github.com/grafana/helm-charts/issues/1214" class="bare">https://github.com/grafana/helm-charts/issues/1214</a>
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="title">Ajout du dépôt Helm <code>prometheus-community</code> :</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ helm repo add grafana https://grafana.github.io/helm-charts
+$ helm repo update</code></pre>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_cluster_kube_foo"><a class="anchor" href="#_cluster_kube_foo"></a>Cluster <code>kube-foo</code></h5>
+<div class="paragraph">
+<p>Ce cluster appartient en totalité au tenant <code>foo</code>, aussi on fait en sorte de forcer le positionnement du label <code>tenant</code> sur tous les journaux transmis par Promtail à Loki.</p>
+</div>
+<div class="listingblock">
+<div class="title">Configuration des external labels pour les logs provenant du cluster kube-foo</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">config:
+  snippets:
+    extraClientConfigs: |
+      external_labels:
+        dc: "dc-1"
+        cluster: "kube-foo"
+        tenant: "foo"
+[...]</code></pre>
+</div>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+Dans le cadre du tutoriel, on ajoute aux journaux tous les labels existants au niveau des producteurs sans prendre compte des possibles valeurs.
+C&#8217;est une chose qui n&#8217;est pas souhaitable en production. En effet, pour se prémunir de problèmes de performances, on va choisir des labels qui ne sont pas susceptibles d&#8217;avoir trop de valeurs différentes, comme une adresse IP ou un identifiant unique par exemple. Dans le cas contraire la cardinalité va être trop élevée et cela posera des problèmes à l&#8217;indexation (lenteurs, occupation mémoire, etc).
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="title">On ajoute tous les labels des pods comme labels des logs :</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">[...]
+    extraRelabelConfigs:
+    - action: "labelmap"
+      regex: "__meta_kubernetes_pod_label_(.+)"</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Déploiement de Promtail sur tous les noeuds du cluster kube-foo</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ kctx kube-foo
+$ kubectl create namespace promtail
+$ helm upgrade --install promtail grafana/promtail \
+--version 3.11.0 \
+--namespace=promtail \
+--values src/config/promtail/values_kube-foo.yaml \
+--set "config.lokiAddress=http://172.16.102.113:3100/loki/api/v1/push"</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">On vérifie que Promtail démarre correctement</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ kns promtail
+$ kubectl get pods -w</code></pre>
+</div>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_cluster_kube_hoster_mutu"><a class="anchor" href="#_cluster_kube_hoster_mutu"></a>Cluster <code>kube-hoster-mutu</code></h5>
+<div class="paragraph">
+<p>Comme ce cluster est mutualisé entre différents tenants, on considère que les producteurs de journaux font autorité sur la valeur du label <code>tenant</code> qu’ils portent.
+Aussi, dans un contexte Kubernetes, le label et la valeur de <code>tenant</code> est porté par les ressources Kubernetes elles-mêmes.
+Nous ne forçons pas le label <code>tenant=hoster</code> au niveau des external labels de Promtail, le label <code>tenant</code> sera traité comme les autres avec la configuration de relabeling :</p>
+</div>
+<div class="listingblock">
+<div class="title">Configuration des external labels pour les logs provenant du cluster kube-hoster-mutu</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">config:
+  snippets:
+    pipelineStages:
+    - cri: {}
+    extraClientConfigs: |
+      external_labels:
+        dc: "dc-2"
+        cluster: "kube-hoster"
+[...]</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Comme pour le cluster kube-foo, on ajoute tous les labels des pods comme labels des logs :</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">[...]
+    extraRelabelConfigs:
+      - action: "labelmap"
+        regex: "__meta_kubernetes_pod_label_(.+)"</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Déploiement de Promtail sur tous les nœuds du cluster kube-hoster-mutu</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ kubie ctx kube-hoster-mutu
+$ kubectl create namespace promtail
+$ helm upgrade --install promtail grafana/promtail \
+--version 3.11.0 \
+--namespace=promtail \
+--values src/config/promtail/values_kube-hoster-mutu.yaml \
+--set "config.lokiAddress=http://172.16.102.113:3100/loki/api/v1/push"</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">On vérifie que Promtail démarre correctement</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ kns promtail
+$ kubectl get pods -w</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_loki_dans_grafana"><a class="anchor" href="#_loki_dans_grafana"></a>Loki dans Grafana</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_ajout_dune_source_de_donnée_loki"><a class="anchor" href="#_ajout_dune_source_de_donnée_loki"></a>Ajout d’une source de donnée Loki</h3>
+<div class="paragraph">
+<p>Dans Grafana, on ajoute une source de donnée de type Loki avec l’adresse : <a href="http://vm-hoster:3100" class="bare">http://vm-hoster:3100</a></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_grafana_explore"><a class="anchor" href="#_grafana_explore"></a>Grafana Explore</h3>
+
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_logcli"><a class="anchor" href="#_logcli"></a>LogCLI</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>LogCLI est l’outil officiel en ligne de commande pour passer des requêtes LogQL auprès de Loki.</p>
+</div>
+<div class="paragraph">
+<p>Documentation officielle : <a href="https://grafana.com/docs/loki/next/tools/logcli/" class="bare">https://grafana.com/docs/loki/next/tools/logcli/</a></p>
+</div>
+<div class="sect2">
+<h3 id="_installation_de_logcli"><a class="anchor" href="#_installation_de_logcli"></a>Installation de logCLI</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ wget -L "https://github.com/grafana/loki/releases/download/v2.5.0/logcli-linux-amd64.zip" -O /tmp/logcli.zip \
+&amp;&amp; sudo unzip /tmp/logcli.zip -d /tmp/ \
+&amp;&amp; sudo mv /tmp/logcli-linux-amd64 /usr/local/bin/logcli \
+&amp;&amp; rm /tmp/logcli.zip</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_configuration"><a class="anchor" href="#_configuration"></a>Configuration</h3>
+<div class="paragraph">
+<p>La configuration de l&#8217;enpoint Loki et de l&#8217;authentification peut se faire par variable d&#8217;environnement.
+Dans le cadre du tutoriel, nous n&#8217;avons pas mis en place de couche d&#8217;authentification, on ne positionne que <code>LOKI_ADDR</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ export LOKI_ADDR=http://vm-hoster:3100</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>On peut ensuite interroger Loki via des requêtes LogQL :</p>
+</div>
+<div class="paragraph">
+<p>Dans un premier terminal, nous pouvons par exemple suivre en direct les logs de l’application <code>demo-jres</code> du tenant <code>foo</code> :</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ logcli query '{tenant="foo",app_kubernetes_io_name="demo-jres"}' --tail</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>S’affiche les logs provenant des déploiements <code>pif</code> et <code>paf</code>.</p>
+</div>
+<div class="listingblock">
+<div class="title">Nous allons filtrer davantage sur l&#8217;instance <code>pif</code> :</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ logcli query '{tenant="foo",app="pif"}' --tail --no-labels</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">On peut filtrer du contenu pour ne plus afficher les requêtes sur les endpoints de liveness et readiness</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ logcli query '{tenant="foo",app="pif"} != "liveness" != "readiness"' --tail --no-labels</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Pour vérifier le fonctionnement en temps réel, on peut produire des logs identifiables depuis un autre terminal :</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ curl http://pif.foo/coucou</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_multi_tenancy"><a class="anchor" href="#_multi_tenancy"></a>Multi-tenancy</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Les déploiements actuels de Loki et des agents Promtail, bien qu&#8217;ils enregistrent le label et la valeur <code>tenant</code> quand il existe, ne sont pas configurés pour correctement prendre en charge le multi-tenant.</p>
+</div>
+<div class="paragraph">
+<p>Loki permet de le gérer au niveau du stockage en séparant les journaux par tenant mais également en permettant l’identification du tenant lors de la requête.</p>
+</div>
+<div class="paragraph">
+<p>Documentation officielle : <a href="https://grafana.com/docs/loki/latest/operations/multi-tenancy/" class="bare">https://grafana.com/docs/loki/latest/operations/multi-tenancy/</a></p>
+</div>
+<div class="sect2">
+<h3 id="_reconfiguration_de_loki"><a class="anchor" href="#_reconfiguration_de_loki"></a>Reconfiguration de Loki</h3>
+<div class="paragraph">
+<p>La directive <code>auth_enabled</code> dans la configuration du Loki peut porter à confusion. Elle ne permet pas l’authentification au sens utilisateur/mot de passe. Il faudra la prendre en charge avec un composant tiers (un reverse proxy authentifiant par exemple : nginx, Apache, etc.).</p>
+</div>
+<div class="paragraph">
+<p>Cette option va activer le multi-tenant :</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>en séparant au stockage des données les journaux par tenant (auparavant toutes les données étaient stockées dans un dossier unique`fake`)</p>
+</li>
+<li>
+<p>en n’autorisant les requêtes sur des données d’un tenant uniquement si l’entête HTTP <code>X-Scope-OrgID</code> avec comme valeur l’identifiant du tenant est transmise avec la requête LogQL</p>
+</li>
+</ul>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="_images/logs-bucket-avant-multitenant.png" alt="Contenu actuel du bucket `logs`" width="tous les logs sont dans un dossier unique `fake`">
+</div>
+<div class="title">Figure 3. Contenu actuel du bucket <code>logs</code></div>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+Dans le cadre de ce tutoriel, les identifiants des tenants sont volontairement explicites et simples. Dans un contexte de production les identifiants des tenants devront être durcis.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>WARNING : Dans le cadre de ce tutoriel, les identifiants des tenants sont volontairement explicites et simples. Dans un contexte de production, les identifiants des tenants devront être durcis. Cela ne doit pas non plus remplacer une authentification et autorisation dans les règles de l’art</p>
+</div>
+<div class="listingblock">
+<div class="title">On édite le fichier de configuration de Loki pour activer l’authentification</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">auth_enabled: true
+[...]</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">On relance Loki</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ loki -config.file=loki-config.yaml</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">On vérifie que Loki est bien démarré</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ curl http://vm-hoster:3100/ready</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_promtail"><a class="anchor" href="#_promtail"></a>Promtail</h3>
+<div class="paragraph">
+<p>En tant qu’agent collecteur et d’envoi de logs à Loki, Promtail doit être configuré pour préciser à quel tenant les journaux appartiennent.
+Loki maintiendra des cibles de stockage distincts en fonction de la clef <code>tenant_id</code>.</p>
+</div>
+<div class="paragraph">
+<p>La valeur de cette clef peut être définie statiquement ou dynamiquement en fonction d&#8217;un autre label voire même en fonction du contenu de la ligne de log.</p>
+</div>
+<div class="sect3">
+<h4 id="_machine_virtuelle_vm_foo_2"><a class="anchor" href="#_machine_virtuelle_vm_foo_2"></a>Machine virtuelle <code>vm-foo</code></h4>
+<div class="listingblock">
+<div class="title">Cette VM appartenant entièrement au tenant foo, on édite la configuration de Promtail pour préciser une valeur statique de tenant_id</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">client:
+  url: "http://172.16.102.113:3100/loki/api/v1/push"
+  tenant_id: "foo"
+  external_labels:
+    hostname: "vm-foo"
+    dc: "dc-1"
+    tenant: "foo"</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">On relance Promtail :</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ promtail -config.file vm-foo-promtail-config.yaml</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_clusters_kube_foo"><a class="anchor" href="#_clusters_kube_foo"></a>Clusters <code>kube-foo</code></h4>
+<div class="paragraph">
+<p>Ce cluster appartient en totalité au tenant <code>foo</code>, aussi on défini <code>tenant_id</code> avec une valeur statique pour tous les journaux de ce cluster.</p>
+</div>
+<div class="listingblock">
+<div class="title">Valeur statique pour tenant_id</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">config:
+  snippets:
+    extraClientConfigs: |
+      tenant_id: "foo"
+      external_labels:
+        dc: "dc-1"
+        cluster: "kube-foo"
+        tenant: "foo"
+[...]</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">On applique cette nouvelle configuration par mise à jour du déploiement Helm de Promtail sur le cluster kube-foo</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ kctx kube-foo
+$ helm upgrade --install promtail grafana/promtail \
+--version 3.11.0 \
+--namespace=promtail \
+--values src/config/promtail/values_kube-foo_multitenant.yaml \
+--set "config.lokiAddress=http://172.16.102.113:3100/loki/api/v1/push"</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_cluster_kube_hoster_mutu_2"><a class="anchor" href="#_cluster_kube_hoster_mutu_2"></a>Cluster <code>kube-hoster-mutu</code></h4>
+<div class="paragraph">
+<p>Comme ce cluster est mutualisé entre différents tenants, on considère que les producteurs de journaux font autorité sur la valeur du label <code>tenant</code>.
+Aussi, dans un contexte Kubernetes, le label <code>tenant</code> est porté par les ressources Kubernetes elles-mêmes.
+Nous n&#8217;appliquons pas une valeur statique à <code>tenant_id</code>, nous configurons Promtail pour qu&#8217;il reprenne dynamiquement la valeur du label <code>tenant</code> existant au niveau des producteurs.</p>
+</div>
+<div class="listingblock">
+<div class="title">Configuration des external labels pour les logs provenant du cluster kube-hoster-mutu</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">config:
+  snippets:
+    pipelineStages:
+    - cri: {}
+    - tenant:
+        source: "tenant"
+    extraClientConfigs: |
+      external_labels:
+        dc: "dc-2"
+        cluster: "kube-hoster"
+    extraRelabelConfigs:
+[...]</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">On applique cette nouvelle configuration par mise à jour du déploiement Helm de Promtail sur le cluster kube-hoster-mutu</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ kubie ctx kube-hoster-mutu
+$ helm upgrade --install promtail grafana/promtail \
+--version 3.11.0 \
+--namespace=promtail \
+--values src/config/promtail/values_kube-hoster-mutu_multitenant.yaml \
+--set "config.lokiAddress=http://172.16.102.113:3100/loki/api/v1/push"</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_vérification_du_stockage_et_de_laccès_multi_tenant"><a class="anchor" href="#_vérification_du_stockage_et_de_laccès_multi_tenant"></a>Vérification du stockage et de l&#8217;accès multi-tenant</h3>
+<div class="sect3">
+<h4 id="_stockage"><a class="anchor" href="#_stockage"></a>Stockage</h4>
+<div class="paragraph">
+<p>Tout d&#8217;abord, nous pouvons vérifier comment évolue le contenu de notre bucket <code>logs</code>.</p>
+</div>
+<div class="paragraph">
+<p>Comme on l’a vu précédemment, Loki va séparer les données de logs par tenant en créant un dossier pour chacun.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="_images/logs-bucket-apres-mutitenant.png" alt="logs bucket apres mutitenant">
+</div>
+<div class="title">Figure 4. Contenu du bucket <code>logs</code> après activation du multi-tenant</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_à_la_lecture"><a class="anchor" href="#_à_la_lecture"></a>À la lecture</h4>
+<div class="sect4">
+<h5 id="_logcli_2"><a class="anchor" href="#_logcli_2"></a>LogCli</h5>
+<div class="paragraph">
+<p>Jouons avec logCli et reprenons la dernière requête passée :</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ logcli query '{tenant="foo",app="pif"} != "liveness" != "readiness"' --tail --no-labels
+ws://vm-hoster:3100/loki/api/v1/tail?limit=30&query=%7Btenant%3D%22foo%22%2Capp%3D%22pif%22%7D+%21%3D+%22liveness%22+%21%3D+%22readiness%22&start=1651614124476565834
+Tailing logs failed: Error response from server: no org id
+(websocket: bad handshake)</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>La commande abouti en erreur, aucun orgID n&#8217;a été passé avec notre requête et Loki rejette la requête.</p>
+</div>
+<div class="paragraph">
+<p>Si on précise maintenant notre tenant <code>foo</code> via l’option <code>--org-id</code> :</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ logcli query '{tenant="foo",app="pif"} != "liveness" != "readiness"' --tail --no-labels --org-id foo</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>On doit bien voir les logs produits par des composants appartenant au tenant <code>foo</code>.</p>
+</div>
+<div class="paragraph">
+<p>Si on rejoue une requête HTTP simple, les logs s&#8217;affichent bien en continu :</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ curl http://pif.foo/coucou-tenant-foo</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Si on relance une requête LogCLI en mettant en contradiction le filtre sur le label tenant et la valeur de OrgID, nous n’affichons plus aucun logs :</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ logcli query '{tenant="bar"}' --tail --no-labels --org-id foo</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>On positionne la même valeur au filtre et orgID, sur <code>bar</code></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ logcli query '{tenant="bar"}' --tail --no-labels --org-id bar</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ curl http://pouf.bar/hello-tenant-bar</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Les flux de lecture sont correctement séparés par tenant.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_multi_tenant_dans_grafana"><a class="anchor" href="#_multi_tenant_dans_grafana"></a>Multi-tenant dans Grafana</h5>
+<div class="paragraph">
+<p>En retournant dans Grafana et dans les propriétés de la source de données Loki créée plus tôt, on clique sur <code>Save &amp; Test</code>.
+Grafana nous affiche une erreur 400 :</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="_images/logs-grafana-erreur.png" alt="Erreur d’authentification auprès de la datasource Loki">
+</div>
+<div class="title">Figure 5. Erreur d’authentification auprès de la datasource Loki</div>
+</div>
+<div class="paragraph">
+<p>Nous allons créer une nouvelle datasource dédiée aux journaux du tenant <code>foo</code> en précisant un entête HTTP custom :</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Header : <code>X-Scope-OrgID</code></p>
+</li>
+<li>
+<p>Value : <code>foo</code></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Grafana se connecte et récupère bien des données auprès de Loki</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="_images/logs-grafana-ok.png" alt="Grafana se connecte et récupère bien des données auprès de Loki">
+</div>
+</div>
+<div class="paragraph">
+<p>Dans l&#8217;interface Explore, on peut lancer différentes requête pour s’assurer du bon comportement :</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">{tenant="foo"} # tous les logs du tenant foo
+{tenant!="foo",app=~".+"} # tous les logs n’appartenant pas à foo</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Nous pouvons créer 2 nouvelles sources de données pour les 2 tenants restant <code>bar</code> et <code>hoster</code> en précisant l’entête HTTP adapté.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_tenant_hoster"><a class="anchor" href="#_tenant_hoster"></a>Tenant Hoster</h5>
+<div class="paragraph">
+<p>Après création d’une source de données pour le tenant <code>hoster</code>, et en cherchant à afficher les logs de ce tenant :</p>
+</div>
+<div class="listingblock">
+<div class="title">Tous les logs du tenant hoster</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">{tenant="hoster"}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Rien ne s’affiche.</p>
+</div>
+<div class="paragraph">
+<p>À ce stade c’est normal, en effet les composants du cluster Kuernetes du tenant <code>hoster</code> produisent bien des logs, on peut les afficher via une requête <code>kubectl</code>. Par exemple en affichant les logs de l&#8217;ingress controller installé au sein du cluster :</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ kubectl --namespace ingress-nginx logs -l app.kubernetes.io/name=ingress-nginx</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Si on regarde les labels du pod, on se rend compte qu’il manque un label <code>tenant</code> :</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ kubectl --namespace ingress-nginx get pods -l app.kubernetes.io/name=ingress-nginx --show-labels</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Nous allons rapidement éditer le deployment pour ajouter le label tenant à la valeur <code>hoster</code> :</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ kubectl patch deployment ingress-nginx-controller --type=json -p='[{"op": "add", "path": "/spec/template/metadata/labels/tenant", "value": "hoster"}]'</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Si on retourne dans Grafana, et qu&#8217;on actualise notre recherche, les logs de l&#8217;ingress controller devraient arriver d&#8217;ici quelques secondes, le temps que l&#8217;ingress controller redémarre avec le bon label et que Promtail traite les logs.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>This page was built using the Antora default UI.</p>
+  <p>The source code for this UI is licensed under the terms of the MPL-2.0 license.</p>
+</footer>
+<script src="./_/js/site.js"></script>
+<script async src="./_/js/vendor/highlight.js"></script>
+  </body>
+</html>
